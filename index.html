@@ -387,27 +387,27 @@ $('restore').onchange=async ev=>{
  ev.target.value='';
 };
 
-$('pdf').onclick=()=>{
+$('pdf').addEventListener('click',()=>{
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   if (standalone) {
-    // iOS home-screen web apps do not reliably expose the native print dialog.
-    // Open the same report in a browser tab so Safari can provide Print / Save PDF.
-    const opened = window.open(location.href, '_blank');
-    if (!opened) {
-      msg('O iPhone bloqueou a abertura. Abra o app no Safari e use Compartilhar > Imprimir.', true);
-    } else {
-      msg('Abrindo no Safari para imprimir ou salvar em PDF.');
-    }
+    // Use a real user-activated link instead of window.open (more reliable in iOS web apps).
+    const link=document.createElement('a');
+    link.href=location.href.split('#')[0] + (location.search ? '&' : '?') + 'openInSafari=1';
+    link.target='_blank';
+    link.rel='noopener';
+    link.style.display='none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    msg('Se uma nova aba não abrir, toque em Compartilhar no iPhone e escolha Abrir no Safari. Depois use Compartilhar > Imprimir.');
     return;
   }
-  const btn=$('pdf');
-  btn.disabled=true;btn.textContent='Preparando impressão…';
-  requestAnimationFrame(()=>setTimeout(()=>{
-    try{window.focus();window.print();}
-    catch(err){msg('Não foi possível abrir a impressão. No Safari, use Compartilhar > Imprimir.',true);}
-    finally{btn.disabled=false;btn.textContent='Imprimir / salvar PDF';}
-  },180));
-};
+  try {
+    window.print();
+  } catch (err) {
+    msg('A impressão foi bloqueada pelo navegador. Use Compartilhar > Imprimir.',true);
+  }
+});
 restoreSettings();
 load();
 
