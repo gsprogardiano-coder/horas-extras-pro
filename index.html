@@ -387,81 +387,84 @@ $('restore').onchange=async ev=>{
  ev.target.value='';
 };
 
-async function loadJsPDF(){
- if(window.jspdf?.jsPDF)return window.jspdf.jsPDF;
- await new Promise((resolve,reject)=>{
-  const script=document.createElement('script');
-  script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
-  script.onload=resolve;script.onerror=()=>reject(new Error('Não foi possível carregar o gerador de PDF. Verifique a internet e tente novamente.'));
-  document.head.appendChild(script);
- });
- if(!window.jspdf?.jsPDF)throw new Error('Gerador de PDF indisponível.');
- return window.jspdf.jsPDF;
+
+function pdfAscii(value){
+ return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,'?');
 }
-async function imageAsDataURL(src){
- return new Promise(resolve=>{
-  const img=new Image();img.onload=()=>{
-   try{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);resolve(c.toDataURL('image/png'))}catch(e){resolve(null)}
-  };img.onerror=()=>resolve(null);img.src=src;
+function pdfEscape(value){return pdfAscii(value).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')}
+function makeLocalPDF(){
+ const month=$('month').value||'Fechamento mensal',list=monthEntries();
+ const pages=[];let lines=[];
+ const add=(text,size=9,bold=false)=>lines.push({text:pdfAscii(text),size,bold});
+ add('HORAS EXTRAS PRO - GARDY',17,true);
+ add('Relatorio mensal - '+month,10);
+ add('Dias registrados: '+$('days').textContent+' | Folgas: '+$('offDays').textContent+' | Horas trabalhadas: '+$('worked').textContent);
+ add('Horas extras: '+$('overtime').textContent+' | Horas noturnas: '+$('night').textContent);
+ add('Valor extras: '+$('extraValue').textContent+' | Adicional noturno: '+$('nightValue').textContent+' | DSR: '+$('dsrValue').textContent);
+ add(' ');
+ add('LANCAMENTOS',12,true);
+ add('Data       Tipo       Entrada  Saida   Intervalo       Trabalhadas  Extras  Noturnas  Valor',8,true);
+ list.forEach(e=>{
+  const c=calc(e),off=e.dayType==='off';
+  add(`${e.date.split('-').reverse().join('/')}  ${(off?'Folga':'Trabalho').padEnd(9)} ${(off?'--':e.start).padEnd(7)} ${(off?'--':e.end).padEnd(7)} ${(off?'--':e.hasBreak?e.breakStart+'-'+e.breakEnd:'--').padEnd(14)} ${fmtHours(c.worked).padEnd(11)} ${c.extra.toFixed(2)}h  ${fmtHours(c.night).padEnd(8)} ${money(c.total)}`,7);
  });
-}
-$('pdf').addEventListener('click',async()=>{
- const btn=$('pdf');const old=btn.textContent;
- btn.disabled=true;btn.textContent='Gerando PDF…';
- try{
-  const JsPDF=await loadJsPDF();
-  const doc=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight();
-  const left=12,right=pageW-12;let y=14;
-  const month=$('month').value||'Fechamento mensal';
-  const list=monthEntries();
-  const addPage=()=>{doc.addPage();y=15};
-  const ensure=(h=8)=>{if(y+h>pageH-12)addPage()};
-  const line=(text,size=9,bold=false,color=[35,45,60])=>{
-   doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(...color);
-   const lines=doc.splitTextToSize(String(text),pageW-24);
-   ensure(lines.length*(size*.42)+2);doc.text(lines,12,y);y+=lines.length*(size*.42)+2;
-  };
-  const logo=await imageAsDataURL('./logo-gardy.png');
-  if(logo){try{doc.addImage(logo,'PNG',12,y-2,18,18)}catch(e){}}
-  doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(12,30,50);doc.text('HORAS EXTRAS PRO · GARDY',34,y+5);
-  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(90,105,125);doc.text('Relatório mensal · '+month,34,y+11);y+=22;
-  doc.setDrawColor(40,190,220);doc.setLineWidth(.8);doc.line(12,y,right,y);y+=7;
-  line('RESUMO DA JORNADA',11,true,[15,145,175]);
-  line(`Dias registrados: ${$('days').textContent}  |  Folgas: ${$('offDays').textContent}  |  Horas trabalhadas: ${$('worked').textContent}  |  Horas extras: ${$('overtime').textContent}  |  Horas noturnas: ${$('night').textContent}`,9,true);
-  line(`Valor de horas extras: ${$('extraValue').textContent}  |  Adicional noturno: ${$('nightValue').textContent}  |  DSR estimado: ${$('dsrValue').textContent}  |  Total adicional estimado: ${$('heroTotal').textContent}`,9);
-  y+=3;line('LANÇAMENTOS',11,true,[15,145,175]);
-  const headers=['Data','Tipo','Entrada','Saída','Intervalo','Trabalhadas','Extras','Noturnas','Valor estimado'];
-  const widths=[22,22,18,18,30,25,20,24,30];const x0=12;
-  const drawRow=(vals,isHeader=false)=>{
-   const h=8;ensure(h+1);let x=x0;
-   if(isHeader){doc.setFillColor(18,35,55);doc.rect(x0,y-5,pageW-24,h,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(7)}
-   else{doc.setDrawColor(215,222,230);doc.line(x0,y+3,right,y+3);doc.setTextColor(30,40,55);doc.setFont('helvetica','normal');doc.setFontSize(7)}
-   vals.forEach((v,i)=>{doc.text(String(v??'—').slice(0,32),x+1,y);x+=widths[i]});
-   y+=h;
-  };
-  drawRow(headers,true);
-  if(!list.length){line('Nenhum lançamento registrado neste mês.',9)}
-  list.forEach(e=>{
-   const c=calc(e),off=e.dayType==='off';
-   drawRow([e.date.split('-').reverse().join('/'),off?'Folga':'Trabalho',off?'—':e.start,off?'—':e.end,off?'—':e.hasBreak?(e.breakStart+'-'+e.breakEnd):'—',fmtHours(c.worked),c.extra.toFixed(2)+'h',fmtHours(c.night),money(c.total)]);
+ add(' ');
+ add('SIMULADOR DE SALARIO LIQUIDO',12,true);
+ add('Salario bruto: '+$('grossPay').textContent+' | INSS: '+$('inssPay').textContent+' | IRRF: '+$('irrfPay').textContent);
+ add('Outros descontos: '+$('otherPay').textContent+' | Total descontos: '+$('deductionsPay').textContent);
+ add('Salario liquido estimado: '+$('netPay').textContent,11,true);
+ add('Valores estimados. Confira o holerite e as regras aplicaveis.',8);
+ const maxLines=43;
+ for(let i=0;i<lines.length;i+=maxLines)pages.push(lines.slice(i,i+maxLines));
+ if(!pages.length)pages.push([]);
+ const objs=[];
+ const addObj=(str)=>{objs.push(str);return objs.length};
+ const catalogId=addObj('<< /Type /Catalog /Pages 2 0 R >>');
+ const pagesId=addObj('');
+ const fontRegular=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+ const fontBold=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+ const pageIds=[];
+ pages.forEach((pg,idx)=>{
+  let y=560,commands=[];
+  pg.forEach((ln)=>{
+   commands.push(`BT /${ln.bold?'F2':'F1'} ${ln.size} Tf 42 ${y} Td (${pdfEscape(ln.text)}) Tj ET`);
+   y-=Math.max(12,ln.size+4);
   });
-  y+=4;line('SIMULADOR DE SALÁRIO LÍQUIDO',11,true,[15,145,175]);
-  line(`Salário bruto estimado: ${$('grossPay').textContent}  |  INSS: ${$('inssPay').textContent}  |  IRRF: ${$('irrfPay').textContent}`,9,true);
-  line(`Outros descontos: ${$('otherPay').textContent}  |  Total de descontos: ${$('deductionsPay').textContent}  |  Salário líquido estimado: ${$('netPay').textContent}`,9,true);
-  y+=4;line('Documento gerado pelo Horas Extras Pro. Valores estimados; confira com o holerite e as regras aplicáveis.',7,false,[100,110,120]);
-  const blob=doc.output('blob');const file=new File([blob],`horas-extras-${month}.pdf`,{type:'application/pdf'});
-  if(navigator.canShare?.({files:[file]})&&navigator.share){
-   await navigator.share({files:[file],title:'Relatório Horas Extras Pro',text:'Relatório mensal de jornada e salário estimado.'});
-   msg('PDF pronto. Escolha Salvar em Arquivos no menu de compartilhamento.');
-  }else{
-   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-   msg('PDF gerado. Se o iPhone não salvar automaticamente, use Compartilhar > Salvar em Arquivos.');
-  }
- }catch(err){
-  msg(err?.message||'Não foi possível gerar o PDF. Verifique a conexão e tente novamente.',true);
- }finally{btn.disabled=false;btn.textContent=old;}
+  const stream=commands.join('\n');
+  const contentId=addObj(`<< /Length ${new TextEncoder().encode(stream).length} >>\nstream\n${stream}\nendstream`);
+  const pageId=addObj(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 ${fontRegular} 0 R /F2 ${fontBold} 0 R >> >> /Contents ${contentId} 0 R >>`);
+  pageIds.push(pageId);
+ });
+ objs[pagesId-1]=`<< /Type /Pages /Kids [${pageIds.map(id=>id+' 0 R').join(' ')}] /Count ${pageIds.length} >>`;
+ let pdf='%PDF-1.4\n',offsets=[0];
+ objs.forEach((obj,i)=>{offsets.push(new TextEncoder().encode(pdf).length);pdf+=`${i+1} 0 obj\n${obj}\nendobj\n`;});
+ const xref=new TextEncoder().encode(pdf).length;
+ pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
+ offsets.slice(1).forEach(off=>pdf+=String(off).padStart(10,'0')+' 00000 n \n');
+ pdf+=`trailer\n<< /Size ${objs.length+1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+ return new Blob([pdf],{type:'application/pdf'});
+}
+$('pdf').addEventListener('click',()=>{
+ const btn=$('pdf'),old=btn.textContent;
+ try{
+  btn.disabled=true;btn.textContent='Preparando PDF...';
+  const blob=makeLocalPDF(),month=$('month').value||'relatorio';
+  const file=new File([blob],`horas-extras-${month}.pdf`,{type:'application/pdf'});
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+   navigator.share({files:[file],title:'Relatorio Horas Extras Pro'}).then(()=>msg('PDF pronto para compartilhar ou salvar em Arquivos.')).catch(err=>{
+    if(err.name!=='AbortError')downloadPDF(blob,file.name);
+   });
+  }else downloadPDF(blob,file.name);
+ }catch(err){msg('Erro ao gerar PDF: '+(err.message||'tente novamente.'),true);}
+ finally{btn.disabled=false;btn.textContent=old;}
 });
+function downloadPDF(blob,name){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;a.target='_blank';a.rel='noopener';
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),120000);
+ msg('PDF gerado. Se não baixar automaticamente, abra Compartilhar e escolha Salvar em Arquivos.');
+}
 restoreSettings();
 load();
 
