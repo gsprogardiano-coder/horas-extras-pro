@@ -58,7 +58,7 @@ footer{max-width:1080px;margin:0 auto;padding:0 16px 30px;color:var(--muted);fon
     <div class="field full"><label for="break2">Intervalo</label><select id="break2"><option value="yes">Descontar intervalo informado</option><option value="no">Sem intervalo informado</option></select></div>
     <div class="field full"><label for="obs">Observação (opcional)</label><input id="obs" type="text" placeholder="Ex.: montagem de evento, show, desmontagem"></div>
    </div>
-   <div class="actions"><button id="saveBtn">＋ Adicionar jornada</button><button class="secondary" id="clearForm">Limpar campos</button></div>
+   <div class="actions"><button id="saveBtn">＋ Adicionar jornada</button><button class="secondary" id="cancelEdit" hidden>Cancelar edição</button><button class="secondary" id="clearForm">Limpar campos</button></div>
    <p class="note">Aceita saída após meia-noite. O intervalo deve estar dentro do período trabalhado.</p>
    <div id="formMsg" class="note" role="status"></div>
   </section>
@@ -151,26 +151,63 @@ function calc(e){
 }
 function fmtHours(m){let h=Math.floor(m/60),mi=Math.round(m%60);if(mi===60){h++;mi=0}return `${h}h${mi?` ${mi}min`:''}`}
 function monthEntries(){return entries.filter(e=>e.date.startsWith($('month').value)).sort((a,b)=>a.date.localeCompare(b.date))}
+let editingId = null;
+function resetForm(){
+ editingId=null;
+ $('saveBtn').textContent='＋ Adicionar jornada';
+ $('cancelEdit').hidden=true;
+ $('date').disabled=false;
+ $('start').value='09:00';$('end').value='18:00';
+ $('breakStart').value='12:00';$('breakEnd').value='13:00';
+ $('break2').value='yes';$('obs').value='';
+}
+function beginEdit(id){
+ const e=entries.find(x=>String(x.id)===String(id));if(!e)return;
+ editingId=e.id;
+ $('date').value=e.date;$('start').value=e.start;$('end').value=e.end;
+ $('breakStart').value=e.breakStart||'';$('breakEnd').value=e.breakEnd||'';
+ $('break2').value=e.hasBreak?'yes':'no';$('obs').value=e.obs||'';
+ $('date').disabled=true;
+ $('saveBtn').textContent='✓ Salvar alterações';
+ $('cancelEdit').hidden=false;
+ msg('Editando lançamento. Altere os campos e toque em Salvar alterações.');
+ $('date').scrollIntoView({behavior:'smooth',block:'center'});
+}
 function render(){
  let list=monthEntries(), worked=0,night=0,extra=0,ev=0,nv=0;
  $('monthLabel').textContent=$('month').value||'Fechamento mensal';
  $('rows').innerHTML='';
  if(!list.length)$('rows').innerHTML='<tr><td colspan="9" class="empty">Nenhuma jornada registrada neste mês.</td></tr>';
  list.forEach(e=>{let c=calc(e);worked+=c.worked;night+=c.night;extra+=c.extra;ev+=c.extraVal;nv+=c.nightVal;
- let tr=document.createElement('tr');tr.innerHTML=`<td>${e.date.split('-').reverse().join('/')}</td><td>${e.start}</td><td>${e.end}</td><td>${e.hasBreak?e.breakStart+'–'+e.breakEnd:'—'}</td><td>${fmtHours(c.worked)}</td><td>${c.extra.toFixed(2)}h</td><td>${fmtHours(c.night)}</td><td><strong>${money(c.total)}</strong></td><td class="no-print"><button class="danger" data-del="${e.id}">Excluir</button></td>`;$('rows').appendChild(tr)});
+ let tr=document.createElement('tr');tr.innerHTML=`<td>${e.date.split('-').reverse().join('/')}</td><td>${e.start}</td><td>${e.end}</td><td>${e.hasBreak?e.breakStart+'–'+e.breakEnd:'—'}</td><td>${fmtHours(c.worked)}</td><td>${c.extra.toFixed(2)}h</td><td>${fmtHours(c.night)}</td><td><strong>${money(c.total)}</strong></td><td class="no-print"><button class="secondary" data-edit="${e.id}">Editar</button> <button class="danger" data-del="${e.id}">Excluir</button></td>`;$('rows').appendChild(tr)});
  $('days').textContent=list.length;$('worked').textContent=fmtHours(worked);$('overtime').textContent=extra.toFixed(2)+'h';$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('heroTotal').textContent=money(ev+nv);
 }
 function msg(t,bad=false){$('formMsg').textContent=t;$('formMsg').style.color=bad?'#bd4545':'#167a59'}
 $('saveBtn').onclick=()=>{
- let e={id:(window.crypto && typeof window.crypto.randomUUID==='function')?window.crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(16).slice(2),date:$('date').value,start:$('start').value,end:$('end').value,breakStart:$('breakStart').value,breakEnd:$('breakEnd').value,hasBreak:$('break2').value==='yes',obs:$('obs').value};
+ let e={id:editingId||(window.crypto && typeof window.crypto.randomUUID==='function')?((editingId)||(window.crypto.randomUUID())):String(Date.now())+'-'+Math.random().toString(16).slice(2),date:$('date').value,start:$('start').value,end:$('end').value,breakStart:$('breakStart').value,breakEnd:$('breakEnd').value,hasBreak:$('break2').value==='yes',obs:$('obs').value};
  if(!e.date||!e.start||!e.end){msg('Preencha data, entrada e saída.',true);return}
  let s=mins(e.start),en=mins(e.end);if(en<=s)en+=1440;
  if(e.hasBreak){let bs=mins(e.breakStart),be=mins(e.breakEnd);if(!Number.isFinite(bs)||!Number.isFinite(be)){msg('Preencha início e fim do intervalo.',true);return}if(bs<s)bs+=1440;if(be<bs)be+=1440;if(bs<s||be>en||be<=bs){msg('O intervalo precisa estar dentro da jornada e ter duração positiva.',true);return}}
  if(en-s-(e.hasBreak?((mins(e.breakEnd)+(mins(e.breakEnd)<mins(e.breakStart)?1440:0))-(mins(e.breakStart)+(mins(e.breakStart)<s?1440:0))):0)<=0){msg('A jornada calculada precisa ser maior que zero.',true);return}
- entries.push(e);persist();msg('Jornada adicionada e salva neste navegador.');$('obs').value='';
+ if(editingId!==null){
+   const idx=entries.findIndex(x=>String(x.id)===String(editingId));
+   if(idx<0){msg('Não foi possível localizar o lançamento para editar.',true);return}
+   entries[idx]=e;
+   persist();msg('Alterações salvas com sucesso.');
+ }else{
+   entries.push(e);
+   persist();msg('Jornada adicionada e salva neste navegador.');
+ }
+ resetForm();
 };
-$('clearForm').onclick=()=>{['start','end','breakStart','breakEnd','obs'].forEach((id,i)=>$(id).value=['09:00','18:00','12:00','13:00',''][i]);$('break2').value='yes';msg('Campos limpos.')};
-$('rows').onclick=ev=>{let id=ev.target.dataset.del;if(id&&confirm('Excluir este lançamento?')){entries=entries.filter(e=>e.id!==id);persist()}};
+$('cancelEdit').onclick=()=>{resetForm();msg('Edição cancelada.')};
+$('clearForm').onclick=()=>{resetForm();msg('Campos limpos.')};
+$('rows').onclick=ev=>{
+ let edit=ev.target.closest('[data-edit]')?.dataset.edit;
+ let id=ev.target.closest('[data-del]')?.dataset.del;
+ if(edit){beginEdit(edit);return}
+ if(id&&confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')){entries=entries.filter(e=>String(e.id)!==String(id));if(String(editingId)===String(id))resetForm();persist();msg('Lançamento excluído.')}
+};
 ['salary','divisor','daily','extraRate','nightRate','month'].forEach(id=>{
   $(id).addEventListener('input',()=>{saveSettings();render();});
   $(id).addEventListener('change',()=>{saveSettings();render();});
