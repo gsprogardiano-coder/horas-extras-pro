@@ -17,7 +17,6 @@ button{border:0;border-radius:11px;padding:11px 15px;font:700 14px inherit;curso
 .monthrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.monthrow input{max-width:180px}.right{margin-left:auto}
 footer{max-width:1080px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:12px}
 @media(max-width:760px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}header{padding-top:18px}.logo-img{width:56px;height:56px;flex-basis:56px}}
-@media print{body{background:white}header{padding:15px;color:#000;background:white;border-bottom:2px solid #222}.sub,.actions,.no-print,footer{display:none!important}header .hero strong{color:#000}main{margin:10px auto}.card{box-shadow:none;break-inside:avoid}.grid{display:block}.card{margin-bottom:12px}}
 
 /* TEMA DARK TECH — inspirado em consoles visuais, LED wall e Resolume */
 :root{color-scheme:dark;--navy:#0b1324;--navy2:#111d35;--mint:#35e6ff;--bg:#070b14;--ink:#e8f2ff;--muted:#8294ad;--line:#24344d;--card:#101a2b;--red:#ff557d}
@@ -37,7 +36,29 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
 .calhead{color:#8fa6c1}.calday{background:#0b1524;border:1px solid #263c57;color:#d9eaff}.calday.has{background:#073440;border-color:#16a9c1;color:#8ff2ff;box-shadow:inset 0 0 12px #19cce522}.calday.off{background:#332018;border-color:#9a5a31;color:#ffc18c}.calday.today{outline:2px solid #b16bff}
 .note{color:#8fa6c1}.pill{background:#12323d;color:#65eaff;border:1px solid #236879}.empty{color:#8294ad}
 .monthrow input{background:#080f1c}.right{color:#a9bdd5}footer{color:#8294ad}
-@media print{body{background:white;color:#111}header{background:white;color:#111;border-bottom:2px solid #222}header:after{display:none}.card{background:white;border:1px solid #ccc}.stat,.calday{background:#f5f5f5;color:#111}}
+
+@page{size:auto;margin:12mm}
+@media print{
+  :root{color-scheme:light;--ink:#111;--muted:#555;--line:#bbb;--card:#fff}
+  html,body{background:#fff!important;color:#111!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-size:11px}
+  header{padding:12px 16px!important;background:#fff!important;color:#111!important;border:0!important;border-bottom:2px solid #222!important;overflow:visible!important}
+  header:after{display:none!important}
+  header .sub,header .hero small{color:#333!important}
+  header .hero strong{color:#111!important;text-shadow:none!important}
+  .logo-img{box-shadow:none!important}
+  main{max-width:none!important;margin:8px auto!important;padding:0!important}
+  .grid{display:block!important}
+  .card{background:#fff!important;color:#111!important;border:1px solid #bbb!important;box-shadow:none!important;border-radius:6px!important;margin:0 0 10px!important;padding:12px!important;break-inside:avoid-page}
+  .card h2,.card p,.card label,.note,.stat b,.stat small,table,th,td{color:#111!important}
+  .stat,.calday,.calday.has,.calday.off{background:#f3f3f3!important;color:#111!important;border:1px solid #ccc!important;box-shadow:none!important}
+  .tablewrap{overflow:visible!important}
+  table{width:100%!important;white-space:normal!important;font-size:9px!important;border-collapse:collapse!important}
+  th,td{padding:5px 4px!important;border-bottom:1px solid #ccc!important}
+  .sub,.actions,.no-print,footer{display:none!important}
+  button{display:none!important}
+  .calendar{break-inside:avoid}
+}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -366,7 +387,16 @@ $('restore').onchange=async ev=>{
  ev.target.value='';
 };
 
-$('pdf').onclick=()=>window.print();
+$('pdf').onclick=()=>{
+  // Safari/iPhone: invoke the native print sheet directly from the tap.
+  const btn=$('pdf');
+  btn.disabled=true;btn.textContent='Preparando impressão…';
+  requestAnimationFrame(()=>setTimeout(()=>{
+    try{window.focus();window.print();}
+    catch(err){msg('Não foi possível abrir a impressão. No Safari, use Compartilhar > Imprimir.',true);}
+    finally{btn.disabled=false;btn.textContent='Imprimir / salvar PDF';}
+  },180));
+};
 restoreSettings();
 load();
 
