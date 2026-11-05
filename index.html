@@ -388,7 +388,18 @@ $('restore').onchange=async ev=>{
 };
 
 $('pdf').onclick=()=>{
-  // Safari/iPhone: invoke the native print sheet directly from the tap.
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (standalone) {
+    // iOS home-screen web apps do not reliably expose the native print dialog.
+    // Open the same report in a browser tab so Safari can provide Print / Save PDF.
+    const opened = window.open(location.href, '_blank');
+    if (!opened) {
+      msg('O iPhone bloqueou a abertura. Abra o app no Safari e use Compartilhar > Imprimir.', true);
+    } else {
+      msg('Abrindo no Safari para imprimir ou salvar em PDF.');
+    }
+    return;
+  }
   const btn=$('pdf');
   btn.disabled=true;btn.textContent='Preparando impressão…';
   requestAnimationFrame(()=>setTimeout(()=>{
