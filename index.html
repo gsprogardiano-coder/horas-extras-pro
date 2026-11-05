@@ -387,26 +387,80 @@ $('restore').onchange=async ev=>{
  ev.target.value='';
 };
 
-$('pdf').addEventListener('click',()=>{
-  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (standalone) {
-    // Use a real user-activated link instead of window.open (more reliable in iOS web apps).
-    const link=document.createElement('a');
-    link.href=location.href.split('#')[0] + (location.search ? '&' : '?') + 'openInSafari=1';
-    link.target='_blank';
-    link.rel='noopener';
-    link.style.display='none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    msg('Se uma nova aba não abrir, toque em Compartilhar no iPhone e escolha Abrir no Safari. Depois use Compartilhar > Imprimir.');
-    return;
+async function loadJsPDF(){
+ if(window.jspdf?.jsPDF)return window.jspdf.jsPDF;
+ await new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+  script.onload=resolve;script.onerror=()=>reject(new Error('Não foi possível carregar o gerador de PDF. Verifique a internet e tente novamente.'));
+  document.head.appendChild(script);
+ });
+ if(!window.jspdf?.jsPDF)throw new Error('Gerador de PDF indisponível.');
+ return window.jspdf.jsPDF;
+}
+async function imageAsDataURL(src){
+ return new Promise(resolve=>{
+  const img=new Image();img.onload=()=>{
+   try{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);resolve(c.toDataURL('image/png'))}catch(e){resolve(null)}
+  };img.onerror=()=>resolve(null);img.src=src;
+ });
+}
+$('pdf').addEventListener('click',async()=>{
+ const btn=$('pdf');const old=btn.textContent;
+ btn.disabled=true;btn.textContent='Gerando PDF…';
+ try{
+  const JsPDF=await loadJsPDF();
+  const doc=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const pageW=doc.internal.pageSize.getWidth(),pageH=doc.internal.pageSize.getHeight();
+  const left=12,right=pageW-12;let y=14;
+  const month=$('month').value||'Fechamento mensal';
+  const list=monthEntries();
+  const addPage=()=>{doc.addPage();y=15};
+  const ensure=(h=8)=>{if(y+h>pageH-12)addPage()};
+  const line=(text,size=9,bold=false,color=[35,45,60])=>{
+   doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);doc.setTextColor(...color);
+   const lines=doc.splitTextToSize(String(text),pageW-24);
+   ensure(lines.length*(size*.42)+2);doc.text(lines,12,y);y+=lines.length*(size*.42)+2;
+  };
+  const logo=await imageAsDataURL('./logo-gardy.png');
+  if(logo){try{doc.addImage(logo,'PNG',12,y-2,18,18)}catch(e){}}
+  doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(12,30,50);doc.text('HORAS EXTRAS PRO · GARDY',34,y+5);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(90,105,125);doc.text('Relatório mensal · '+month,34,y+11);y+=22;
+  doc.setDrawColor(40,190,220);doc.setLineWidth(.8);doc.line(12,y,right,y);y+=7;
+  line('RESUMO DA JORNADA',11,true,[15,145,175]);
+  line(`Dias registrados: ${$('days').textContent}  |  Folgas: ${$('offDays').textContent}  |  Horas trabalhadas: ${$('worked').textContent}  |  Horas extras: ${$('overtime').textContent}  |  Horas noturnas: ${$('night').textContent}`,9,true);
+  line(`Valor de horas extras: ${$('extraValue').textContent}  |  Adicional noturno: ${$('nightValue').textContent}  |  DSR estimado: ${$('dsrValue').textContent}  |  Total adicional estimado: ${$('heroTotal').textContent}`,9);
+  y+=3;line('LANÇAMENTOS',11,true,[15,145,175]);
+  const headers=['Data','Tipo','Entrada','Saída','Intervalo','Trabalhadas','Extras','Noturnas','Valor estimado'];
+  const widths=[22,22,18,18,30,25,20,24,30];const x0=12;
+  const drawRow=(vals,isHeader=false)=>{
+   const h=8;ensure(h+1);let x=x0;
+   if(isHeader){doc.setFillColor(18,35,55);doc.rect(x0,y-5,pageW-24,h,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(7)}
+   else{doc.setDrawColor(215,222,230);doc.line(x0,y+3,right,y+3);doc.setTextColor(30,40,55);doc.setFont('helvetica','normal');doc.setFontSize(7)}
+   vals.forEach((v,i)=>{doc.text(String(v??'—').slice(0,32),x+1,y);x+=widths[i]});
+   y+=h;
+  };
+  drawRow(headers,true);
+  if(!list.length){line('Nenhum lançamento registrado neste mês.',9)}
+  list.forEach(e=>{
+   const c=calc(e),off=e.dayType==='off';
+   drawRow([e.date.split('-').reverse().join('/'),off?'Folga':'Trabalho',off?'—':e.start,off?'—':e.end,off?'—':e.hasBreak?(e.breakStart+'-'+e.breakEnd):'—',fmtHours(c.worked),c.extra.toFixed(2)+'h',fmtHours(c.night),money(c.total)]);
+  });
+  y+=4;line('SIMULADOR DE SALÁRIO LÍQUIDO',11,true,[15,145,175]);
+  line(`Salário bruto estimado: ${$('grossPay').textContent}  |  INSS: ${$('inssPay').textContent}  |  IRRF: ${$('irrfPay').textContent}`,9,true);
+  line(`Outros descontos: ${$('otherPay').textContent}  |  Total de descontos: ${$('deductionsPay').textContent}  |  Salário líquido estimado: ${$('netPay').textContent}`,9,true);
+  y+=4;line('Documento gerado pelo Horas Extras Pro. Valores estimados; confira com o holerite e as regras aplicáveis.',7,false,[100,110,120]);
+  const blob=doc.output('blob');const file=new File([blob],`horas-extras-${month}.pdf`,{type:'application/pdf'});
+  if(navigator.canShare?.({files:[file]})&&navigator.share){
+   await navigator.share({files:[file],title:'Relatório Horas Extras Pro',text:'Relatório mensal de jornada e salário estimado.'});
+   msg('PDF pronto. Escolha Salvar em Arquivos no menu de compartilhamento.');
+  }else{
+   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=file.name;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+   msg('PDF gerado. Se o iPhone não salvar automaticamente, use Compartilhar > Salvar em Arquivos.');
   }
-  try {
-    window.print();
-  } catch (err) {
-    msg('A impressão foi bloqueada pelo navegador. Use Compartilhar > Imprimir.',true);
-  }
+ }catch(err){
+  msg(err?.message||'Não foi possível gerar o PDF. Verifique a conexão e tente novamente.',true);
+ }finally{btn.disabled=false;btn.textContent=old;}
 });
 restoreSettings();
 load();
