@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#142438">
+<meta name="theme-color" content="#070b14">
 <title>Horas Extras Pro</title>
 <style>
 :root{--navy:#142438;--navy2:#203851;--mint:#69d7b0;--bg:#f3f6f9;--ink:#182638;--muted:#718096;--line:#e3e9ef;--card:#fff;--red:#bd4545}
@@ -18,6 +18,26 @@ button{border:0;border-radius:11px;padding:11px 15px;font:700 14px inherit;curso
 footer{max-width:1080px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:12px}
 @media(max-width:760px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}header{padding-top:18px}.logo-img{width:56px;height:56px;flex-basis:56px}}
 @media print{body{background:white}header{padding:15px;color:#000;background:white;border-bottom:2px solid #222}.sub,.actions,.no-print,footer{display:none!important}header .hero strong{color:#000}main{margin:10px auto}.card{box-shadow:none;break-inside:avoid}.grid{display:block}.card{margin-bottom:12px}}
+
+/* TEMA DARK TECH — inspirado em consoles visuais, LED wall e Resolume */
+:root{color-scheme:dark;--navy:#0b1324;--navy2:#111d35;--mint:#35e6ff;--bg:#070b14;--ink:#e8f2ff;--muted:#8294ad;--line:#24344d;--card:#101a2b;--red:#ff557d}
+html{background:#070b14}body{background:radial-gradient(ellipse at 12% 0%,#102743 0,transparent 34%),radial-gradient(ellipse at 92% 8%,#24133b 0,transparent 28%),#070b14;color:#e8f2ff}
+header{background:linear-gradient(115deg,#080d18 0%,#101d35 58%,#17112b 100%);border-bottom:1px solid #25445e;position:relative;overflow:hidden}
+header:after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,#35e6ff,#7b61ff,#ff3d9a,#35e6ff);opacity:.9}
+.brand{letter-spacing:.08em;text-shadow:0 0 18px #35e6ff35}.logo-img{border:1px solid #35e6ff55;box-shadow:0 0 18px #35e6ff22}
+.sub,header .hero small{color:#9eb3cc}.hero strong{color:#35e6ff!important;text-shadow:0 0 20px #35e6ff55}
+.card{background:linear-gradient(145deg,#111d30,#0d1626);border:1px solid #2a405d;box-shadow:0 8px 28px #0007,inset 0 1px #ffffff08;border-radius:16px}
+.card h2{color:#eaf5ff}.fields label,label{color:#9eb3cc}
+input,select{background:#080f1c;color:#e8f2ff;border:1px solid #304763;border-radius:9px}
+input::placeholder{color:#667b96}input:focus,select:focus{outline:2px solid #35e6ff55;border-color:#35e6ff;box-shadow:0 0 14px #35e6ff20}
+button{background:linear-gradient(135deg,#087e9b,#1555a2);color:#f4fcff;border:1px solid #35e6ff55;box-shadow:0 3px 12px #0005}
+button.secondary{background:#17243a;color:#cfeaff;border:1px solid #38516f}button.danger{background:#351827;color:#ff9ab0;border:1px solid #8c3454}
+.stat{background:linear-gradient(135deg,#14253b,#101a2c);border:1px solid #2b4563}.stat small{color:#91a8c2}.stat b{color:#35e6ff}
+table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
+.calhead{color:#8fa6c1}.calday{background:#0b1524;border:1px solid #263c57;color:#d9eaff}.calday.has{background:#073440;border-color:#16a9c1;color:#8ff2ff;box-shadow:inset 0 0 12px #19cce522}.calday.off{background:#332018;border-color:#9a5a31;color:#ffc18c}.calday.today{outline:2px solid #b16bff}
+.note{color:#8fa6c1}.pill{background:#12323d;color:#65eaff;border:1px solid #236879}.empty{color:#8294ad}
+.monthrow input{background:#080f1c}.right{color:#a9bdd5}footer{color:#8294ad}
+@media print{body{background:white;color:#111}header{background:white;color:#111;border-bottom:2px solid #222}header:after{display:none}.card{background:white;border:1px solid #ccc}.stat,.calday{background:#f5f5f5;color:#111}}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
