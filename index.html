@@ -90,7 +90,7 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
     <div class="field"><label for="salary">Salário mensal (R$)</label><input id="salary" type="number" min="0" step=".01" value=""></div>
     <div class="field"><label for="divisor">Divisor mensal</label><select id="divisor"><option>220</option><option>200</option><option>180</option></select></div>
     <div class="field"><label for="daily">Jornada normal diária</label><input id="daily" type="number" min="1" max="24" step=".25" value="8"></div>
-    <div class="field"><label for="extraRate">Adicional de hora extra (%)</label><input id="extraRate" type="number" min="0" max="300" value="50"></div>
+    <div class="field"><label for="extraRate">Adicional sobre hora extra (%)</label><input id="extraRate" type="number" min="0" max="300" value="0"></div>
     <div class="field"><label for="nightRate">Adicional noturno (%)</label><input id="nightRate" type="number" min="0" max="100" value="20"></div>
     <div class="field"><label for="month">Mês de referência</label><input id="month" type="month"></div>
     <div class="field"><label for="dsrWorkdays">Dias úteis para DSR</label><input id="dsrWorkdays" type="number" min="1" max="31" value="26"></div>
@@ -139,7 +139,7 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
  </section>
  <section class="card" style="margin-top:16px" id="salaryCalc">
   <h2>05 · Simulador de salário líquido</h2>
-  <p class="note" style="margin-top:-8px">Estimativa mensal: salário-base + horas extras + adicional noturno + DSR, com INSS e IRRF. Ajuste dependentes e outros descontos conforme seu holerite.</p>
+  <p class="note" style="margin-top:-8px">Simulação da folha: considera somente o salário-base, com INSS e IRRF estimados. Horas extras são apresentadas separadamente como pagamento à parte, sem descontos simulados neste aplicativo.</p>
   <div class="fields">
    <div class="field"><label for="dependents">Dependentes para IRRF</label><input id="dependents" type="number" min="0" max="20" step="1" value="0"></div>
    <div class="field"><label for="otherDiscounts">Outros descontos (R$)</label><input id="otherDiscounts" type="number" min="0" step=".01" value="0" placeholder="VT, plano, faltas etc."></div>
@@ -157,9 +157,9 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
  <section class="card" style="margin-top:16px">
   <h2>Como o cálculo funciona</h2>
   <p style="margin:0 0 8px">• Hora normal = salário mensal ÷ divisor.</p>
-  <p style="margin:0 0 8px">• Hora extra = horas acima da jornada diária configurada × valor-hora × (1 + adicional).</p>
+  <p style="margin:0 0 8px">• Pagamento de hora extra = horas acima da jornada diária configurada × valor-hora. O adicional está configurado em 0% por padrão; altere somente se houver pagamento adicional.</p>
   <p style="margin:0 0 8px">• Período noturno urbano considerado: 22h às 5h, com hora noturna reduzida de 52min30s e adicional mínimo de 20% configurável.</p>
-  <p class="note">DSR estimado = (valor de horas extras + adicional noturno) ÷ dias úteis informados × repousos e feriados informados. Informe corretamente os dias úteis e os repousos/feriados do mês. A fórmula pode variar conforme categoria, escala, faltas, feriados e convenção coletiva. O aplicativo ainda não apura limites semanais, reflexos completos, descontos nem adicional específico de domingos/feriados. Confirme com RH/contador/sindicato.</p>
+  <p class="note">O valor das horas extras é exibido separadamente do salário e não é somado à simulação da folha. Este modo representa o pagamento informado pelo usuário (hora normal, sem adicional de 50% por padrão); não significa que adicionais ou reflexos previstos em lei estejam dispensados. O DSR é uma estimativa separada e pode não refletir todos os direitos aplicáveis. Confirme as regras com RH, contador ou sindicato.</p>
  </section>
 </main>
 <footer>Horas Extras Pro · Protótipo web local · Não substitui espelho de ponto oficial nem orientação trabalhista.</footer>
@@ -209,7 +209,7 @@ function switchProfile(name){
   entries=[];
   // Evita carregar as configurações do perfil anterior.
   ['salary','divisor','daily','extraRate','nightRate','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>$(id).value='');
-  $('divisor').value='220';$('daily').value='8';$('extraRate').value='50';$('nightRate').value='20';
+  $('divisor').value='220';$('daily').value='8';$('extraRate').value='0';$('nightRate').value='20';
   $('dsrWorkdays').value='26';$('dsrRestdays').value='4';$('dependents').value='0';$('otherDiscounts').value='0';
   restoreSettings();updateProfileLabel();load();saveSettings();
   msg('Perfil de '+activeProfileName+' aberto. Os dados estão separados.');
@@ -332,7 +332,7 @@ function calcIRRF2026(gross,inss,dependents){
 }
 function renderSalary(list,ev,nv,dsr){
  const baseSalary=Math.max(0,Number($('salary').value)||0);
- const gross=baseSalary+ev+nv+dsr;
+ const gross=baseSalary;
  const inss=calcINSS2026(gross);
  const irrf=calcIRRF2026(gross,inss,Number($('dependents').value)||0);
  const other=Math.max(0,Number($('otherDiscounts').value)||0);
@@ -454,7 +454,7 @@ function makeLocalPDF(){
   add(`${e.date.split('-').reverse().join('/')}  ${(off?'Folga':'Trabalho').padEnd(9)} ${(off?'--':e.start).padEnd(7)} ${(off?'--':e.end).padEnd(7)} ${(off?'--':e.hasBreak?e.breakStart+'-'+e.breakEnd:'--').padEnd(14)} ${fmtHours(c.worked).padEnd(11)} ${c.extra.toFixed(2)}h  ${fmtHours(c.night).padEnd(8)} ${money(c.total)}`,7);
  });
  add(' ');
- add('SIMULADOR DE SALARIO LIQUIDO',12,true);
+ add('SIMULADOR DE SALARIO LIQUIDO - SOMENTE FOLHA',12,true);
  add('Salario bruto: '+$('grossPay').textContent+' | INSS: '+$('inssPay').textContent+' | IRRF: '+$('irrfPay').textContent);
  add('Outros descontos: '+$('otherPay').textContent+' | Total descontos: '+$('deductionsPay').textContent);
  add('Salario liquido estimado: '+$('netPay').textContent,11,true);
