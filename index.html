@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#070b14">
-<title>Horas Extras Pro</title>
+<title>Horas Extras Pro — Gardy</title>
 <style>
 :root{--navy:#142438;--navy2:#203851;--mint:#69d7b0;--bg:#f3f6f9;--ink:#182638;--muted:#718096;--line:#e3e9ef;--card:#fff;--red:#bd4545}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
@@ -75,11 +75,19 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
   <div class="hero"><div><small>TOTAL BRUTO ESTIMADO NO MÊS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo</div></div></div>
 </header>
 <main>
- <div class="grid">
+ <section class="card" style="margin-bottom:16px" id="profileCard">
+  <h2>Perfil do funcionário</h2>
+  <div class="fields">
+    <div class="field"><label for="profileName">Nome do funcionário</label><input id="profileName" type="text" maxlength="60" placeholder="Digite seu nome"></div>
+    <div class="field" style="justify-content:end"><button id="switchProfile" type="button">Abrir meu perfil</button></div>
+  </div>
+  <p class="note" id="profileStatus">Cada perfil mantém salário, configurações e lançamentos separados neste aparelho. Não há conta, senha ou sincronização pela internet.</p>
+</section>
+<div class="grid">
   <section class="card">
    <h2>01 · Configurações salariais</h2>
    <div class="fields">
-    <div class="field"><label for="salary">Salário mensal (R$)</label><input id="salary" type="number" min="0" step=".01" value="6000"></div>
+    <div class="field"><label for="salary">Salário mensal (R$)</label><input id="salary" type="number" min="0" step=".01" value=""></div>
     <div class="field"><label for="divisor">Divisor mensal</label><select id="divisor"><option>220</option><option>200</option><option>180</option></select></div>
     <div class="field"><label for="daily">Jornada normal diária</label><input id="daily" type="number" min="1" max="24" step=".25" value="8"></div>
     <div class="field"><label for="extraRate">Adicional de hora extra (%)</label><input id="extraRate" type="number" min="0" max="300" value="50"></div>
@@ -127,7 +135,7 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
   </div>
   <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Imprimir / salvar PDF</button></div>
   <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Estimativa</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
-  <p class="note" id="storageNote">Os dados e configurações são salvos neste navegador. Use Backup JSON para cópia e transferência entre aparelhos; não há sincronização automática.</p>
+  <p class="note" id="storageNote">Os dados e configurações são salvos neste navegador e perfil. Perfis não têm senha nem sincronização pela internet. Use Backup JSON para transferir seus dados entre aparelhos; não compartilhe seu backup.</p>
  </section>
  <section class="card" style="margin-top:16px" id="salaryCalc">
   <h2>05 · Simulador de salário líquido</h2>
@@ -157,20 +165,54 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
 <footer>Horas Extras Pro · Protótipo web local · Não substitui espelho de ponto oficial nem orientação trabalhista.</footer>
 <script>
 const $=id=>document.getElementById(id);
-const KEY='horas-extras-pro-v1';
-const SETTINGS_KEY='horas-extras-pro-settings-v1';
+const LEGACY_KEY='horas-extras-pro-v1';
+const LEGACY_SETTINGS_KEY='horas-extras-pro-settings-v1';
+const PROFILE_NAME_KEY='horas-extras-pro-active-profile-v2';
+const MIGRATION_KEY='horas-extras-pro-profile-migrated-v2';
+let activeProfileName=localStorage.getItem(PROFILE_NAME_KEY)||'Meu perfil';
+function profileToken(name){return encodeURIComponent(String(name||'Meu perfil').trim().toLocaleLowerCase('pt-BR'));}
+function dataKey(){return 'horas-extras-pro-v2-data-'+profileToken(activeProfileName);}
+function settingsKey(){return 'horas-extras-pro-v2-settings-'+profileToken(activeProfileName);}
+function safeFileName(name){return String(name||'funcionario').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'funcionario';}
+function updateProfileLabel(){
+  $('profileName').value=activeProfileName;
+  $('profileStatus').textContent='Perfil ativo: '+activeProfileName+'. Os dados deste perfil ficam separados dos demais neste aparelho. Não são enviados para um servidor.';
+  document.title='Horas Extras Pro — '+activeProfileName;
+}
 function saveSettings(){
   const s={salary:$('salary').value,divisor:$('divisor').value,daily:$('daily').value,
     extraRate:$('extraRate').value,nightRate:$('nightRate').value,month:$('month').value,
     dsrWorkdays:$('dsrWorkdays').value,dsrRestdays:$('dsrRestdays').value,
     dependents:$('dependents').value,otherDiscounts:$('otherDiscounts').value};
-  try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(s));}catch(e){}
+  try{localStorage.setItem(settingsKey(),JSON.stringify(s));}catch(e){}
 }
 function restoreSettings(){
   try{
-    const s=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');
+    const s=JSON.parse(localStorage.getItem(settingsKey())||'null');
     if(s) Object.entries(s).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v;});
   }catch(e){}
+}
+function migrateLegacyToActive(){
+  if(localStorage.getItem(MIGRATION_KEY))return;
+  const target=dataKey(),targetSettings=settingsKey();
+  if(!localStorage.getItem(target)&&localStorage.getItem(LEGACY_KEY))localStorage.setItem(target,localStorage.getItem(LEGACY_KEY));
+  if(!localStorage.getItem(targetSettings)&&localStorage.getItem(LEGACY_SETTINGS_KEY))localStorage.setItem(targetSettings,localStorage.getItem(LEGACY_SETTINGS_KEY));
+  localStorage.setItem(MIGRATION_KEY,'1');
+}
+function switchProfile(name){
+  const clean=String(name||'').trim();
+  if(!clean){msg('Digite seu nome para abrir o perfil.',true);return;}
+  if(clean.length>60){msg('O nome deve ter até 60 caracteres.',true);return;}
+  saveSettings();
+  activeProfileName=clean;
+  localStorage.setItem(PROFILE_NAME_KEY,activeProfileName);
+  entries=[];
+  // Evita carregar as configurações do perfil anterior.
+  ['salary','divisor','daily','extraRate','nightRate','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>$(id).value='');
+  $('divisor').value='220';$('daily').value='8';$('extraRate').value='50';$('nightRate').value='20';
+  $('dsrWorkdays').value='26';$('dsrRestdays').value='4';$('dependents').value='0';$('otherDiscounts').value='0';
+  restoreSettings();updateProfileLabel();load();saveSettings();
+  msg('Perfil de '+activeProfileName+' aberto. Os dados estão separados.');
 }
 
 let entries=[];
@@ -180,7 +222,7 @@ $('date').value=`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.g
 let storageAvailable = true;
 function load(){
   try {
-    const raw = window.localStorage.getItem(KEY);
+    const raw = window.localStorage.getItem(dataKey());
     entries = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(entries)) entries = [];
   } catch (err) {
@@ -192,7 +234,7 @@ function load(){
 }
 function persist(){
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(entries));
+    window.localStorage.setItem(dataKey(), JSON.stringify(entries));
     storageAvailable = true;
     msg('Jornada adicionada e salva neste navegador.');
   } catch (err) {
@@ -364,16 +406,18 @@ $('rows').onclick=ev=>{
  }
  if(id&&confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')){entries=entries.filter(e=>String(e.id)!==String(id));if(String(editingId)===String(id))resetForm();persist();msg('Lançamento excluído.')}
 };
+$('switchProfile').addEventListener('click',()=>switchProfile($('profileName').value));
+$('profileName').addEventListener('keydown',ev=>{if(ev.key==='Enter')switchProfile($('profileName').value)});
 ['salary','divisor','daily','extraRate','nightRate','month','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>{
   $(id).addEventListener('input',()=>{saveSettings();render();});
   $(id).addEventListener('change',()=>{saveSettings();render();});
 });
-$('csv').onclick=()=>{let list=monthEntries(),head=['Data','Tipo','Entrada','Saida','Intervalo','Trabalhadas_min','Extras_h','Noturnas_relogio_min','Valor_estimado_R$','Observacao'];let lines=[head,...list.map(e=>{let c=calc(e);return[e.date,e.dayType==='off'?'Folga':'Trabalho',e.start,e.end,e.hasBreak?e.breakStart+'-'+e.breakEnd:'',c.worked,c.extra.toFixed(2),c.night,c.total.toFixed(2),e.obs||'']} )].map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';'));let blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='horas-extras-'+$('month').value+'.csv';a.click();URL.revokeObjectURL(a.href)};
+$('csv').onclick=()=>{let list=monthEntries(),head=['Data','Tipo','Entrada','Saida','Intervalo','Trabalhadas_min','Extras_h','Noturnas_relogio_min','Valor_estimado_R$','Observacao'];let lines=[head,...list.map(e=>{let c=calc(e);return[e.date,e.dayType==='off'?'Folga':'Trabalho',e.start,e.end,e.hasBreak?e.breakStart+'-'+e.breakEnd:'',c.worked,c.extra.toFixed(2),c.night,c.total.toFixed(2),e.obs||'']} )].map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';'));let blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='horas-extras-'+safeFileName(activeProfileName)+'-'+$('month').value+'.csv';a.click();URL.revokeObjectURL(a.href)};
 
 $('backup').onclick=()=>{
- const data={version:1,entries,settings:{salary:$('salary').value,divisor:$('divisor').value,daily:$('daily').value,extraRate:$('extraRate').value,nightRate:$('nightRate').value,month:$('month').value,dsrWorkdays:$('dsrWorkdays').value,dsrRestdays:$('dsrRestdays').value,dependents:$('dependents').value,otherDiscounts:$('otherDiscounts').value}};
+ const data={version:2,profile:activeProfileName,entries,settings:{salary:$('salary').value,divisor:$('divisor').value,daily:$('daily').value,extraRate:$('extraRate').value,nightRate:$('nightRate').value,month:$('month').value,dsrWorkdays:$('dsrWorkdays').value,dsrRestdays:$('dsrRestdays').value,dependents:$('dependents').value,otherDiscounts:$('otherDiscounts').value}};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');
- a.href=URL.createObjectURL(blob);a.download='horas-extras-pro-backup.json';a.click();URL.revokeObjectURL(a.href);
+ a.href=URL.createObjectURL(blob);a.download='backup-horas-extras-'+safeFileName(activeProfileName)+'.json';a.click();URL.revokeObjectURL(a.href);
 };
 $('restore').onchange=async ev=>{
  const file=ev.target.files[0];if(!file)return;
@@ -382,7 +426,7 @@ $('restore').onchange=async ev=>{
   if(!data||!Array.isArray(data.entries))throw new Error('Arquivo inválido');
   entries=data.entries;persist();
   if(data.settings){Object.entries(data.settings).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v;});saveSettings();render();}
-  msg('Backup restaurado com sucesso.');
+  msg('Backup restaurado no perfil '+activeProfileName+'.');
  }catch(e){msg('Não foi possível restaurar: arquivo inválido.',true);}
  ev.target.value='';
 };
@@ -397,6 +441,7 @@ function makeLocalPDF(){
  const pages=[];let lines=[];
  const add=(text,size=9,bold=false)=>lines.push({text:pdfAscii(text),size,bold});
  add('HORAS EXTRAS PRO - GARDY',17,true);
+ add('Funcionario: '+activeProfileName,11,true);
  add('Relatorio mensal - '+month,10);
  add('Dias registrados: '+$('days').textContent+' | Folgas: '+$('offDays').textContent+' | Horas trabalhadas: '+$('worked').textContent);
  add('Horas extras: '+$('overtime').textContent+' | Horas noturnas: '+$('night').textContent);
@@ -449,7 +494,7 @@ $('pdf').addEventListener('click',()=>{
  try{
   btn.disabled=true;btn.textContent='Preparando PDF...';
   const blob=makeLocalPDF(),month=$('month').value||'relatorio';
-  const file=new File([blob],`horas-extras-${month}.pdf`,{type:'application/pdf'});
+  const file=new File([blob],`horas-extras-${safeFileName(activeProfileName)}-${month}.pdf`,{type:'application/pdf'});
   if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
    navigator.share({files:[file],title:'Relatorio Horas Extras Pro'}).then(()=>msg('PDF pronto para compartilhar ou salvar em Arquivos.')).catch(err=>{
     if(err.name!=='AbortError')downloadPDF(blob,file.name);
@@ -465,7 +510,10 @@ function downloadPDF(blob,name){
  setTimeout(()=>URL.revokeObjectURL(url),120000);
  msg('PDF gerado. Se não baixar automaticamente, abra Compartilhar e escolha Salvar em Arquivos.');
 }
+migrateLegacyToActive();
+updateProfileLabel();
 restoreSettings();
+// Carrega o perfil ativo; dados antigos são migrados quando o usuário confirma o nome.
 load();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

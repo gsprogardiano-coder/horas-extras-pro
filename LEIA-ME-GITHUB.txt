@@ -1,23 +1,31 @@
-HORAS EXTRAS PRO — PACOTE PARA GITHUB PAGES
+HORAS EXTRAS PRO — GARDY | VERSÃO 11 — PERFIS INDIVIDUAIS
 
-1) Crie um repositório público chamado horas-extras-pro no GitHub.
-2) Envie TODOS os arquivos desta pasta para a raiz do repositório:
-   index.html, manifest.webmanifest, sw.js, .nojekyll e a pasta icons.
-3) No repositório, abra Settings > Pages.
-4) Em Build and deployment, escolha Deploy from a branch.
-5) Selecione branch main e pasta /(root), depois Save.
-6) Aguarde a publicação. O endereço será:
-   https://SEU-USUARIO.github.io/horas-extras-pro/
+O QUE MUDOU
+- Campo para identificar o funcionário e abrir seu perfil.
+- Cada perfil tem lançamentos e configurações salariais separados no mesmo navegador/aparelho.
+- Salário começa em branco para cada perfil novo, evitando herdar o valor de outra pessoa.
+- CSV, backup JSON e PDF passam a identificar o funcionário no nome do arquivo; o PDF também mostra o nome no relatório.
+- Os dados antigos deste navegador são migrados para o perfil ativo na primeira abertura desta versão.
+- Cache do aplicativo atualizado para v11.
 
-PWA:
-- iPhone: abra o endereço no Safari > Compartilhar > Adicionar à Tela de Início.
-- Android: abra no Chrome > menu > Instalar aplicativo / Adicionar à tela inicial.
+COMO PUBLICAR NO GITHUB PELO CELULAR
+1. Faça backup JSON dos seus registros antes de atualizar, por segurança.
+2. Abra o repositório GitHub e substitua os arquivos da raiz pelos arquivos deste ZIP.
+3. Envie também a pasta icons com os dois ícones.
+4. Faça Commit changes na branch main.
+5. Aguarde o GitHub Pages publicar. Depois abra o site no Safari e atualize a página.
+6. Se estiver usando o app instalado na tela inicial, abra o site no Safari uma vez para atualizar o cache e depois reabra o app.
 
-DADOS:
-- Registros ficam no armazenamento local do navegador.
-- Use Backup JSON para transferir dados manualmente entre dispositivos.
-- Não há sincronização em nuvem nem login nesta versão.
+COMO CADA FUNCIONÁRIO USA
+1. Cada pessoa abre o mesmo link no próprio celular.
+2. Digita seu nome em “Perfil do funcionário” e toca em “Abrir meu perfil”.
+3. Preenche o próprio salário, divisor, jornada e demais configurações.
+4. Registra as jornadas normalmente.
+5. Faz backup JSON periodicamente e guarda em local seguro.
 
-IMPORTANTE:
-O repositório e o site do GitHub Pages são públicos no plano gratuito.
-Não coloque dados pessoais ou documentos no repositório.
+IMPORTANTE — LIMITAÇÕES DESTA VERSÃO
+- É um controle individual local: não há login, senha, banco de dados central ou sincronização entre aparelhos.
+- Em aparelhos diferentes, cada funcionário terá seus próprios dados locais, mesmo usando o mesmo link.
+- No mesmo aparelho, os perfis são separados pelo nome, mas não são protegidos por senha; alguém com acesso ao aparelho/navegador pode abrir os perfis.
+- Limpar os dados do navegador ou trocar de aparelho pode apagar os registros locais. Use backup JSON para transferir/restaurar.
+- Não substitui o sistema oficial de ponto nem a conferência do holerite.
