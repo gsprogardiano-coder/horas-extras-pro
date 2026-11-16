@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#070b14">
-<title>Horas Extras Pro — Gardy v27</title>
+<title>Horas Extras Pro — Gardy</title>
 <style>
 :root{--navy:#142438;--navy2:#203851;--mint:#69d7b0;--bg:#f3f6f9;--ink:#182638;--muted:#718096;--line:#e3e9ef;--card:#fff;--red:#bd4545}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
@@ -553,4 +553,464 @@ $('gateSignUp').addEventListener('click',async()=>{
 $('gateReset').addEventListener('click',async()=>{
  if(!sb){gateMessage('Serviço de recuperação indisponível.',true);return}
  const email=$('gateEmail').value.trim();if(!email){gateMessage('Digite seu e-mail para receber o link de recuperação.',true);return}
- try{const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'});if(error)throw error;gateMessage('Enviamos um link de recuperação par
+ try{const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'});if(error)throw error;gateMessage('Enviamos um link de recuperação para seu e-mail.');}
+ catch(e){gateMessage('Não foi possível enviar o link: '+(e.message||e),true)}
+});
+$('signUpBtn').addEventListener('click',async()=>{if(!sb){authMessage('Serviço de login não carregou. Atualize a página e tente novamente.',true);return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<6){authMessage('Informe um e-mail válido e senha com pelo menos 6 caracteres.',true);return}try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'} });if(error)throw error;if(data.session){authUser=data.user;setAuthUI();await syncCloud();startCloudRealtime()}else authMessage('Cadastro iniciado. Confirme seu e-mail e depois entre no aplicativo.');}catch(e){authMessage('Não foi possível criar a conta: '+(e.message||e),true)}});
+$('signInBtn').addEventListener('click',async()=>{if(!sb){authMessage('Serviço de login não carregou. Atualize a página e tente novamente.',true);return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||!password){authMessage('Informe e-mail e senha.',true);return}try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;authUser=data.user;setAuthUI();await syncCloud();startCloudRealtime()}catch(e){authMessage('Não foi possível entrar: '+(e.message||e),true)}});
+$('signOutBtn').addEventListener('click',async()=>{if(!sb)return;try{const {error}=await sb.auth.signOut();if(error)throw error;stopCloudRealtime();authUser=null;setAuthUI();gateMessage('Você saiu da conta. Entre novamente para continuar.');authMessage('Você saiu. Seus dados locais permanecem neste aparelho.')}catch(e){authMessage('Erro ao sair: '+(e.message||e),true)}});
+
+const LEGACY_KEY='horas-extras-pro-v1';
+const LEGACY_SETTINGS_KEY='horas-extras-pro-settings-v1';
+const PROFILE_NAME_KEY='horas-extras-pro-active-profile-v2';
+const MIGRATION_KEY='horas-extras-pro-profile-migrated-v2';
+let activeProfileName=localStorage.getItem(PROFILE_NAME_KEY)||'Meu perfil';
+function profileToken(name){return encodeURIComponent(String(name||'Meu perfil').trim().toLocaleLowerCase('pt-BR'));}
+function dataKey(){return 'horas-extras-pro-v2-data-'+profileToken(activeProfileName);}
+function settingsKey(){return 'horas-extras-pro-v2-settings-'+profileToken(activeProfileName);}
+function safeFileName(name){return String(name||'funcionario').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'funcionario';}
+function updateProfileLabel(){
+  $('profileName').value=activeProfileName;
+  $('profileStatus').textContent='Perfil ativo: '+activeProfileName+'. Os registros são vinculados à sua conta quando a sincronização está ativada.';
+  document.title='Horas Extras Pro — '+activeProfileName;
+}
+function saveSettings(){
+  const s={salary:$('salary').value,divisor:$('divisor').value,daily:$('daily').value,
+    extraRate:$('extraRate').value,nightRate:$('nightRate').value,month:$('month').value,
+    dsrWorkdays:$('dsrWorkdays').value,dsrRestdays:$('dsrRestdays').value,
+    dependents:$('dependents').value,otherDiscounts:$('otherDiscounts').value};
+  try{localStorage.setItem(settingsKey(),JSON.stringify(s));}catch(e){}
+  if(authUser)cloudSaveSettings();
+}
+function restoreSettings(){
+  try{
+    const s=JSON.parse(localStorage.getItem(settingsKey())||'null');
+    if(s) Object.entries(s).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v;});
+  }catch(e){}
+}
+function migrateLegacyToActive(){
+  if(localStorage.getItem(MIGRATION_KEY))return;
+  const target=dataKey(),targetSettings=settingsKey();
+  if(!localStorage.getItem(target)&&localStorage.getItem(LEGACY_KEY))localStorage.setItem(target,localStorage.getItem(LEGACY_KEY));
+  if(!localStorage.getItem(targetSettings)&&localStorage.getItem(LEGACY_SETTINGS_KEY))localStorage.setItem(targetSettings,localStorage.getItem(LEGACY_SETTINGS_KEY));
+  localStorage.setItem(MIGRATION_KEY,'1');
+}
+function switchProfile(name){
+  const clean=String(name||'').trim();
+  if(!clean){msg('Digite seu nome para abrir o perfil.',true);return;}
+  if(clean.length>60){msg('O nome deve ter até 60 caracteres.',true);return;}
+  saveSettings();
+  activeProfileName=clean;
+  localStorage.setItem(PROFILE_NAME_KEY,activeProfileName);
+  entries=[];
+  // Evita carregar as configurações do perfil anterior.
+  ['salary','divisor','daily','extraRate','nightRate','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>$(id).value='');
+  $('divisor').value='220';$('daily').value='8';$('extraRate').value='0';$('nightRate').value='0';
+  $('dsrWorkdays').value='26';$('dsrRestdays').value='4';$('dependents').value='0';$('otherDiscounts').value='0';
+  restoreSettings();$('extraRate').value='0';$('nightRate').value='0';updateProfileLabel();load();saveSettings();
+  msg('Perfil de '+activeProfileName+' aberto. Os dados estão separados.');
+}
+
+let entries=[];
+const today=new Date(), pad=n=>String(n).padStart(2,'0');
+$('month').value=`${today.getFullYear()}-${pad(today.getMonth()+1)}`;
+$('date').value=`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+let storageAvailable = true;
+function load(){
+  try {
+    const raw = window.localStorage.getItem(dataKey());
+    entries = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(entries)) entries = [];
+  } catch (err) {
+    storageAvailable = false;
+    entries = [];
+  }
+  render();
+  if (!storageAvailable) msg('Atenção: este navegador bloqueou o armazenamento. Os registros ficam apenas enquanto esta página estiver aberta.', true);
+}
+function persist(){
+  try {
+    window.localStorage.setItem(dataKey(), JSON.stringify(entries));
+    if(authUser)cloudSaveEntries();
+    storageAvailable = true;
+    msg('Jornada adicionada e salva neste navegador.');
+  } catch (err) {
+    storageAvailable = false;
+    msg('Jornada adicionada, mas o navegador não permitiu salvar. Não feche esta página e exporte o CSV.', true);
+  }
+  render();
+}
+function money(n){return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function mins(t){if(!t)return NaN;let [h,m]=t.split(':').map(Number);return h*60+m}
+function dur(a,b){return b-a}
+function overlapNight(a,b){let total=0;for(let d=-1;d<=2;d++){let ns=d*1440+22*60,ne=d*1440+29*60;total+=Math.max(0,Math.min(b,ne)-Math.max(a,ns))}return total}
+function calc(e){
+ const salary=Math.max(0,Number($('salary').value)||0);
+ const dayDiscount=salary/30;
+ if(e.dayType==='off'||e.dayType==='absence_justified')return {worked:0,night:0,nightEq:0,extra:0,extraVal:0,nightVal:0,total:0,br:0,absenceDayDiscount:0};
+ if(e.dayType==='absence_unjustified')return {worked:0,night:0,nightEq:0,extra:0,extraVal:0,nightVal:0,total:0,br:0,absenceDayDiscount:dayDiscount};
+ let s=mins(e.start), en=mins(e.end);if(en<=s)en+=1440;
+ let bs=mins(e.breakStart),be=mins(e.breakEnd), br=0;
+ if(e.hasBreak){if(bs<s)bs+=1440;if(be<bs)be+=1440;br=be-bs}
+ let worked=en-s-br;
+ let n=e.hasBreak?overlapNight(s,bs)+overlapNight(be,en):overlapNight(s,en);
+ let nightEq=n/(52.5/60);
+ const dayOfWeek=new Date(e.date+'T12:00:00').getDay();
+ let normalMinutes=dayOfWeek===0?0:(dayOfWeek===6?4*60:Math.max(0,Number($('daily').value)||8)*60);
+ let extra=Math.max(0,worked-normalMinutes)/60;
+ let rate=Math.max(0,Number($('salary').value)||0)/Math.max(1,Number($('divisor').value)||220);
+ let extraVal=extra*rate;
+ let nightVal=0;
+ return {worked,night:n,nightEq,extra,extraVal,nightVal,total:extraVal,br,absenceDayDiscount:0};
+}
+function absenceWeekKey(date){
+ const d=new Date(date+'T12:00:00');
+ const day=(d.getDay()+6)%7;
+ d.setDate(d.getDate()-day);
+ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function absenceDsrSummary(list){
+ const salary=Math.max(0,Number($('salary').value)||0);
+ const unjustified=list.filter(e=>e.dayType==='absence_unjustified');
+ const allUnjustified=entries.filter(e=>e.dayType==='absence_unjustified').slice().sort((a,b)=>a.date.localeCompare(b.date));
+ const firstAbsenceByWeek=new Map();
+ allUnjustified.forEach(e=>{const key=absenceWeekKey(e.date);if(!firstAbsenceByWeek.has(key))firstAbsenceByWeek.set(key,e.date);});
+ const monthKey=$('month').value||'';
+ const weeks=[...firstAbsenceByWeek.values()].filter(date=>date.startsWith(monthKey));
+ return {dayDiscount:unjustified.length*(salary/30),dsrDiscount:weeks.length*(salary/30),count:unjustified.length,weeks:weeks.length};
+}
+function fmtHours(m){let h=Math.floor(m/60),mi=Math.round(m%60);if(mi===60){h++;mi=0}return `${h}h${mi?` ${mi}min`:''}`}
+function monthEntries(){return entries.filter(e=>e.date.startsWith($('month').value)).sort((a,b)=>a.date.localeCompare(b.date))}
+let editingId = null;
+function resetForm(){
+ editingId=null;
+ $('saveBtn').textContent='＋ Adicionar jornada';
+ $('cancelEdit').hidden=true;
+ $('date').disabled=false;
+ $('start').value='09:00';$('end').value='18:00';
+ $('breakStart').value='12:00';$('breakEnd').value='13:00';
+ $('break2').value='yes';$('dayType').value='work';$('obs').value='';toggleDayType();
+}
+function beginEdit(id){
+ const e=entries.find(x=>String(x.id)===String(id));if(!e)return;
+ editingId=e.id;
+ $('date').value=e.date;$('start').value=e.start;$('end').value=e.end;
+ $('breakStart').value=e.breakStart||'';$('breakEnd').value=e.breakEnd||'';
+ $('break2').value=e.hasBreak?'yes':'no';$('dayType').value=e.dayType||'work';$('obs').value=e.obs||'';toggleDayType();
+ $('date').disabled=true;
+ $('saveBtn').textContent='✓ Salvar alterações';
+ $('cancelEdit').hidden=false;
+ msg('Editando lançamento. Altere os campos e toque em Salvar alterações.');
+ $('date').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function renderCalendar(list){
+ const [year,monthNum]=($('month').value||'').split('-').map(Number);
+ const cal=$('calendar');cal.innerHTML='';
+ if(!year||!monthNum)return;
+ const names=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+ names.forEach(n=>{const d=document.createElement('div');d.className='calhead';d.textContent=n;cal.appendChild(d)});
+ const first=new Date(year,monthNum-1,1).getDay(),days=new Date(year,monthNum,0).getDate();
+ const byDate=new Set(list.filter(e=>(e.dayType||'work')==='work').map(e=>e.date));
+ const offDate=new Set(list.filter(e=>e.dayType==='off').map(e=>e.date));
+ const justifiedDate=new Set(list.filter(e=>e.dayType==='absence_justified').map(e=>e.date));
+ const unjustifiedDate=new Set(list.filter(e=>e.dayType==='absence_unjustified').map(e=>e.date));
+ for(let i=0;i<first;i++){const d=document.createElement('div');d.className='calday emptyday';cal.appendChild(d)}
+ for(let day=1;day<=days;day++){
+  const key=`${year}-${pad(monthNum)}-${pad(day)}`;
+  const d=document.createElement('button');d.type='button';d.className='calday'+(byDate.has(key)?' has':offDate.has(key)?' off':justifiedDate.has(key)?' absence-justified':unjustifiedDate.has(key)?' absence-unjustified':'')+(key===`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`?' today':'');
+  d.innerHTML=`${day}${byDate.has(key)?'<small>Trabalho</small>':offDate.has(key)?'<small>Folga</small>':justifiedDate.has(key)?'<small>Falta just.</small>':unjustifiedDate.has(key)?'<small>Falta injust.</small>':''}`;
+  d.addEventListener('click',()=>{$('date').value=key;$('date').disabled=false;$('date').scrollIntoView({behavior:'smooth',block:'center'});});
+  cal.appendChild(d);
+ }
+ $('calendarTitle').textContent=new Date(year,monthNum-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+}
+function calcINSS2026(base){
+ const bands=[[1621.00,.075],[2902.84,.09],[4354.27,.12],[8475.55,.14]];
+ let previous=0,total=0;
+ for(const [limit,rate] of bands){const taxable=Math.max(0,Math.min(base,limit)-previous);total+=taxable*rate;previous=limit;if(base<=limit)break;}
+ return Math.round(total*100)/100;
+}
+function calcIRRF2026(gross,inss,dependents){
+ const depDed=Math.max(0,dependents)*189.59;
+ const legalBase=Math.max(0,gross-inss-depDed);
+ const simplifiedBase=Math.max(0,gross-607.20);
+ const base=Math.min(legalBase,simplifiedBase);
+ let tax=0;
+ if(base<=2428.80)tax=0;
+ else if(base<=2826.65)tax=base*.075-182.16;
+ else if(base<=3751.05)tax=base*.15-394.16;
+ else if(base<=4664.68)tax=base*.225-675.49;
+ else tax=base*.275-908.73;
+ tax=Math.max(0,tax);
+ let reduction=0;
+ if(gross<=5000) reduction=tax;
+ else if(gross<=7350) reduction=Math.max(0,978.62-(.133145*gross));
+ tax=Math.max(0,tax-reduction);
+ return {tax:Math.round(tax*100)/100,base,method:legalBase<=simplifiedBase?'deduções legais':'desconto simplificado'};
+}
+function renderSalary(list,ev,nv,dsr){
+ const baseSalary=Math.max(0,Number($('salary').value)||0);
+ const gross=baseSalary;
+ const inss=calcINSS2026(gross);
+ const irrf=calcIRRF2026(gross,inss,Number($('dependents').value)||0);
+ const other=Math.max(0,Number($('otherDiscounts').value)||0);
+ const abs=absenceDsrSummary(list);
+ const total=inss+irrf.tax+other+abs.dayDiscount+abs.dsrDiscount;
+ $('grossPay').textContent=money(gross);
+ $('inssPay').textContent=money(inss);
+ $('irrfPay').textContent=money(irrf.tax);
+ $('otherPay').textContent=money(other);
+ $('absenceDayPay').textContent=money(abs.dayDiscount);
+ $('absenceDsrPay').textContent=money(abs.dsrDiscount);
+ $('deductionsPay').textContent=money(total);
+ $('netPay').textContent=money(Math.max(0,gross-total));
+ $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Faltas não justificadas: ${abs.count} dia(s), em ${abs.weeks} semana(s) com perda estimada de DSR. Estimativa de salário/30 por dia e um DSR por semana afetada. Confirme a aplicação com o RH/convenção coletiva.`;
+}
+function render(){
+ let list=monthEntries(), worked=0,night=0,extra=0,ev=0,nv=0;
+ const offDays=list.filter(e=>e.dayType==='off').length;
+ const justifiedDays=list.filter(e=>e.dayType==='absence_justified').length;
+ const unjustifiedDays=list.filter(e=>e.dayType==='absence_unjustified').length;
+ $('monthLabel').textContent=$('month').value||'Fechamento mensal';
+ $('rows').innerHTML='';
+ if(!list.length)$('rows').innerHTML='<tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr>';
+ list.forEach(e=>{let c=calc(e);worked+=c.worked;night+=c.night;extra+=c.extra;ev+=c.extraVal;nv+=c.nightVal;
+ let isWork=e.dayType==='work';let typeLabel=({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho';let noHours=!isWork;let tr=document.createElement('tr');tr.innerHTML=`<td>${e.date.split('-').reverse().join('/')}</td><td><strong>${typeLabel}</strong></td><td>${noHours?'—':(e.start||'—')}</td><td>${noHours?'—':(e.end||'—')}</td><td>${noHours?'—':e.hasBreak?e.breakStart+'–'+e.breakEnd:'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round(c.extra*60))}</td><td>${fmtHours(c.night)}</td><td><strong>${money(c.total)}</strong></td><td class="no-print"><button class="secondary" data-edit="${e.id}">Editar</button> <button class="secondary" data-dup="${e.id}">Duplicar</button> <button class="danger" data-del="${e.id}">Excluir</button></td>`;$('rows').appendChild(tr)});
+ const wd=Math.max(1,Number($('dsrWorkdays').value)||1),rd=Math.max(0,Number($('dsrRestdays').value)||0);
+ const dsr=(ev+nv)/wd*rd;
+ renderSalary(list,ev,nv,dsr);
+ $('days').textContent=list.length;$('offDays').textContent=offDays;$('worked').textContent=fmtHours(worked);$('overtime').textContent=fmtHours(Math.round(extra*60));$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('dsrValue').textContent=money(dsr);$('heroTotal').textContent=money(ev);
+ renderCalendar(list);
+}
+function msg(t,bad=false){$('formMsg').textContent=t;$('formMsg').style.color=bad?'#bd4545':'#167a59'}
+function toggleDayType(){
+ const work=$('dayType').value==='work';
+ ['startField','endField','breakStartField','breakEndField','break2Field'].forEach(id=>$(id).hidden=!work);
+}
+$('dayType').addEventListener('change',toggleDayType);
+toggleDayType();
+
+$('saveBtn').onclick=()=>{
+ let e={id:editingId||(window.crypto && typeof window.crypto.randomUUID==='function')?((editingId)||(window.crypto.randomUUID())):String(Date.now())+'-'+Math.random().toString(16).slice(2),date:$('date').value,dayType:$('dayType').value,start:$('start').value,end:$('end').value,breakStart:$('breakStart').value,breakEnd:$('breakEnd').value,hasBreak:$('break2').value==='yes',obs:$('obs').value};
+ if(!e.date){msg('Informe a data.',true);return}
+ if(e.dayType==='off'){e.start='';e.end='';e.breakStart='';e.breakEnd='';e.hasBreak=false;}
+ if(e.dayType==='work'&&(!e.start||!e.end)){msg('Preencha entrada e saída para dia de trabalho.',true);return}
+ let s=mins(e.start),en=mins(e.end);if(e.dayType==='work'&&en<=s)en+=1440;
+ if(e.dayType==='work'&&e.hasBreak){let bs=mins(e.breakStart),be=mins(e.breakEnd);if(!Number.isFinite(bs)||!Number.isFinite(be)){msg('Preencha início e fim do intervalo.',true);return}if(bs<s)bs+=1440;if(be<bs)be+=1440;if(bs<s||be>en||be<=bs){msg('O intervalo precisa estar dentro da jornada e ter duração positiva.',true);return}}
+ if(e.dayType==='work'&&en-s-(e.hasBreak?((mins(e.breakEnd)+(mins(e.breakEnd)<mins(e.breakStart)?1440:0))-(mins(e.breakStart)+(mins(e.breakStart)<s?1440:0))):0)<=0){msg('A jornada calculada precisa ser maior que zero.',true);return}
+ if(editingId!==null){
+   const idx=entries.findIndex(x=>String(x.id)===String(editingId));
+   if(idx<0){msg('Não foi possível localizar o lançamento para editar.',true);return}
+   entries[idx]=e;
+   persist();msg('Alterações salvas com sucesso.');
+ }else{
+   entries.push(e);
+   persist();msg('Jornada adicionada e salva neste navegador.');
+ }
+ resetForm();
+};
+$('cancelEdit').onclick=()=>{resetForm();msg('Edição cancelada.')};
+$('clearForm').onclick=()=>{resetForm();msg('Campos limpos.')};
+$('rows').onclick=ev=>{
+ let edit=ev.target.closest('[data-edit]')?.dataset.edit;
+ let duplicate=ev.target.closest('[data-dup]')?.dataset.dup;
+ let id=ev.target.closest('[data-del]')?.dataset.del;
+ if(edit){beginEdit(edit);return}
+ if(duplicate){
+  const source=entries.find(x=>String(x.id)===String(duplicate));if(!source)return;
+  resetForm();
+  const next=new Date(source.date+'T12:00:00');next.setDate(next.getDate()+1);
+  $('date').value=`${next.getFullYear()}-${pad(next.getMonth()+1)}-${pad(next.getDate())}`;
+  $('start').value=source.start;$('end').value=source.end;
+  $('breakStart').value=source.breakStart||'';$('breakEnd').value=source.breakEnd||'';
+  $('break2').value=source.hasBreak?'yes':'no';$('dayType').value=source.dayType||'work';$('obs').value=source.obs||'';toggleDayType();
+  msg('Jornada copiada para o dia seguinte. Confira a data e os horários antes de adicionar.');
+  $('date').scrollIntoView({behavior:'smooth',block:'center'});return;
+ }
+ if(id&&confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')){entries=entries.filter(e=>String(e.id)!==String(id));if(String(editingId)===String(id))resetForm();persist();if(authUser)cloudDeleteEntry(id);msg('Lançamento excluído.')}
+};
+$('switchProfile').addEventListener('click',()=>switchProfile($('profileName').value));
+$('profileName').addEventListener('keydown',ev=>{if(ev.key==='Enter')switchProfile($('profileName').value)});
+['salary','divisor','daily','extraRate','nightRate','month','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>{
+  $(id).addEventListener('input',()=>{saveSettings();render();});
+  $(id).addEventListener('change',()=>{saveSettings();render();});
+});
+$('csv').onclick=()=>{let list=monthEntries(),head=['Data','Tipo','Entrada','Saida','Intervalo','Trabalhadas_min','Extras_h','Noturnas_relogio_min','Valor_estimado_R$','Observacao'];let lines=[head,...list.map(e=>{let c=calc(e);return[e.date,e.dayType==='off'?'Folga':'Trabalho',e.start,e.end,e.hasBreak?e.breakStart+'-'+e.breakEnd:'',c.worked,c.extra.toFixed(2),c.night,c.total.toFixed(2),e.obs||'']} )].map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';'));let blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='horas-extras-'+safeFileName(activeProfileName)+'-'+$('month').value+'.csv';a.click();URL.revokeObjectURL(a.href)};
+
+$('backup').onclick=()=>{
+ const data={version:2,profile:activeProfileName,entries,settings:{salary:$('salary').value,divisor:$('divisor').value,daily:$('daily').value,extraRate:$('extraRate').value,nightRate:$('nightRate').value,month:$('month').value,dsrWorkdays:$('dsrWorkdays').value,dsrRestdays:$('dsrRestdays').value,dependents:$('dependents').value,otherDiscounts:$('otherDiscounts').value}};
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);a.download='backup-horas-extras-'+safeFileName(activeProfileName)+'.json';a.click();URL.revokeObjectURL(a.href);
+};
+$('restore').onchange=async ev=>{
+ const file=ev.target.files[0];if(!file)return;
+ try{
+  const data=JSON.parse(await file.text());
+  if(!data||!Array.isArray(data.entries))throw new Error('Arquivo inválido');
+  entries=data.entries;persist();
+  if(data.settings){Object.entries(data.settings).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v;});saveSettings();render();}
+  msg('Backup restaurado no perfil '+activeProfileName+'.');
+ }catch(e){msg('Não foi possível restaurar: arquivo inválido.',true);}
+ ev.target.value='';
+};
+
+
+function pdfAscii(value){
+ return String(value??'')
+  .replace(/[\u00A0\u202F\u2007]/g,' ')
+  .replace(/[\u2010-\u2015\u2212]/g,'-')
+  .replace(/[·•]/g,'-')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'')
+  .replace(/[^\x20-\x7E]/g,'');
+}
+function pdfEscape(value){return pdfAscii(value).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')}
+function makeLocalPDF(){
+ const month=$('month').value||'Fechamento mensal',list=monthEntries();
+ const W=842,H=595, pages=[]; let cmds=[];
+ const C={navy:[0.035,0.055,0.09],navy2:[0.075,0.10,0.16],red:[0.91,0.10,0.20],redSoft:[1,0.93,0.94],ink:[0.12,0.15,0.20],muted:[0.39,0.44,0.52],line:[0.87,0.89,0.92],light:[0.965,0.97,0.98],white:[1,1,1]};
+ const rgb=c=>c.map(v=>v.toFixed(3)).join(' ');
+ const rect=(x,y,w,h,color)=>cmds.push(`${rgb(color)} rg ${x} ${y} ${w} ${h} re f`);
+ const stroke=(x1,y1,x2,y2,color=C.line,width=0.7)=>cmds.push(`${rgb(color)} RG ${width} w ${x1} ${y1} m ${x2} ${y2} l S`);
+ 
+ const text=(s,x,y,size=9,color=C.ink,bold=false)=>{
+  const val=pdfEscape(s);
+  cmds.push(`BT /${bold?'F2':'F1'} ${size} Tf ${rgb(color)} rg 1 0 0 1 ${x} ${y} Tm (${val}) Tj ET`);
+ };
+ const moneyText=s=>String(s||'R$ 0,00');
+ const title=(subtitle)=>{
+  rect(0,0,W,H,C.white); rect(0,H-104,W,104,C.navy);
+  rect(0,H-104,7,104,C.red); rect(42,H-28,34,3,C.red);
+  text('GARDY HORAS PRO',42,H-53,19,C.white,true);
+  text('RELATORIO DE JORNADA E HORAS ADICIONAIS',42,H-73,8,[0.78,0.82,0.88],true);
+  text('FECHAMENTO MENSAL',650,H-48,8,[0.78,0.82,0.88],true);
+  text(month,650,H-68,13,C.white,true);
+  text('Funcionario: '+activeProfileName,42,H-129,10,C.ink,true);
+  text(subtitle,42,H-145,8,C.muted,false);
+ };
+ const footer=(n,total)=>{
+  stroke(42,34,W-42,34,C.line,0.6);
+  text('Gardy Horas Pro  |  Relatorio gerado pelo aplicativo',42,20,7,C.muted,false);
+  text('Pagina '+n,W-75,20,7,C.muted,false);
+ };
+ const card=(x,y,w,label,value)=>{
+  rect(x,y,w,54,C.light); rect(x,y,3,54,C.red);
+  text(label.toUpperCase(),x+12,y+37,7,C.muted,true);
+  text(value,x+12,y+15,15,C.red,true);
+ };
+ const tableHead=(y)=>{
+  rect(42,y-7,758,23,C.navy2);
+  const xs=[52,112,192,345,438,523,608,710];
+  const labels=['DATA','TIPO','HORARIO','TRABALHADAS','ADICIONAIS','NOTURNAS','VALOR ADIC.',''];
+  labels.forEach((v,i)=>text(v,xs[i],y+1,7,C.white,true));
+ };
+ const startPage=(pageNo)=>{
+  cmds=[]; title(pageNo===1?'Resumo do periodo e detalhamento dos lancamentos':'Continuação dos lancamentos');
+  if(pageNo===1){
+   card(42,375,177,'DIAS REGISTRADOS',$('days').textContent||'0');
+   card(232,375,177,'HORAS TRABALHADAS',$('worked').textContent||'0h');
+   card(422,375,177,'HORAS ADICIONAIS',$('overtime').textContent||'0h');
+   card(612,375,188,'VALOR ADICIONAL',moneyText($('extraValue').textContent));
+   text('LANÇAMENTOS DO PERIODO',42,347,10,C.ink,true);
+   tableHead(322); return 300;
+  }
+  text('LANÇAMENTOS DO PERIODO — CONTINUAÇÃO',42,347,10,C.ink,true);
+  tableHead(322); return 300;
+ };
+ let pageNo=1, y=startPage(pageNo);
+ const addPage=()=>{footer(pageNo,0);pages.push(cmds.join('\n'));pageNo++;y=startPage(pageNo);};
+ list.forEach((e,idx)=>{
+  if(y<66){addPage();}
+  const c=calc(e),isWork=e.dayType==='work';
+  const date=e.date.split('-').reverse().join('/');
+  const type=({work:'TRABALHO',off:'FOLGA',absence_justified:'FALTA JUSTIFICADA',absence_unjustified:'FALTA NAO JUSTIFICADA'})[e.dayType]||'TRABALHO';
+  const schedule=!isWork?'—':`${e.start||'—'} - ${e.end||'—'}${e.hasBreak?' / '+e.breakStart+'-'+e.breakEnd:''}`;
+  const vals=[date,type,schedule,fmtHours(c.worked),fmtHours(Math.round(c.extra*60)),fmtHours(c.night),money(c.total)];
+  if(idx%2===1)rect(42,y-8,758,25,[0.975,0.978,0.982]);
+  const xx=[52,112,192,345,438,523,608];
+  vals.forEach((v,i)=>text(String(v),xx[i],y, i===2?7:8, i===4?C.red:C.ink, i===4||i===6));
+  stroke(42,y-10,800,y-10,C.line,0.45); y-=25;
+ });
+ if(y<135){addPage();}
+ // Fechamento financeiro e observações sempre no final.
+ rect(42,y-118,758,106,C.light); rect(42,y-118,4,106,C.red);
+ text('RESUMO FINANCEIRO',56,y-25,9,C.ink,true);
+ text('Horas adicionais: '+($('overtime').textContent||'0h'),56,y-43,8,C.muted,false);
+ text('Valor das horas adicionais: '+moneyText($('extraValue').textContent),56,y-60,10,C.red,true);
+ text('DSR estimado sobre adicionais: '+moneyText($('dsrValue').textContent),340,y-43,8,C.muted,false);
+ const absenceTotals=absenceDsrSummary(list);
+ text('Desconto por faltas nao justificadas: '+money(absenceTotals.dayDiscount),56,y-78,8,C.muted,false);
+ text('Perda estimada de DSR por faltas: '+money(absenceTotals.dsrDiscount),340,y-78,8,C.muted,false);
+ text('Horas noturnas: '+($('night').textContent||'0h'),340,y-60,8,C.muted,false);
+ text('SIMULACAO DA FOLHA (ESTIMATIVA)',56,y-99,7,C.muted,true);
+ y-=140;
+ if(y<135){addPage();y-=10;}
+ rect(42,y-94,758,89,[0.99,0.99,0.99]);
+ text('SALARIO BRUTO',56,y-24,7,C.muted,true); text(moneyText($('grossPay').textContent),56,y-44,10,C.ink,true);
+ text('INSS ESTIMADO',245,y-24,7,C.muted,true); text(moneyText($('inssPay').textContent),245,y-44,10,C.ink,true);
+ text('IRRF ESTIMADO',434,y-24,7,C.muted,true); text(moneyText($('irrfPay').textContent),434,y-44,10,C.ink,true);
+ text('FALTAS + DSR',56,y-62,7,C.muted,true); text(money(absenceTotals.dayDiscount+absenceTotals.dsrDiscount),56,y-78,9,C.red,true);
+ text('SALARIO LIQUIDO',623,y-24,7,C.muted,true); text(moneyText($('netPay').textContent),623,y-44,10,C.red,true);
+ text('As horas adicionais sao apresentadas separadamente da simulacao salarial. Valores estimados; confira o holerite e as regras aplicaveis.',42,y-84,7,C.muted,false);
+ footer(pageNo,0);pages.push(cmds.join('\n'));
+ const total=pages.length,objs=[]; const addObj=s=>{objs.push(s);return objs.length;};
+ const catalogId=addObj('<< /Type /Catalog /Pages 2 0 R >>'),pagesId=addObj('');
+ const f1=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'),f2=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+ const pageIds=[];
+ pages.forEach((streamText,i)=>{
+  const stream=streamText+'\n'+`% footer page ${i+1}`;
+  const contentId=addObj(`<< /Length ${new TextEncoder().encode(stream).length} >>\nstream\n${stream}\nendstream`);
+  const pageId=addObj(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${contentId} 0 R >>`);
+  pageIds.push(pageId);
+ });
+ objs[pagesId-1]=`<< /Type /Pages /Kids [${pageIds.map(id=>id+' 0 R').join(' ')}] /Count ${pageIds.length} >>`;
+ let pdf='%PDF-1.4\n',offsets=[0];
+ objs.forEach((obj,i)=>{offsets.push(new TextEncoder().encode(pdf).length);pdf+=`${i+1} 0 obj\n${obj}\nendobj\n`;});
+ const xref=new TextEncoder().encode(pdf).length; pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
+ offsets.slice(1).forEach(off=>pdf+=String(off).padStart(10,'0')+' 00000 n \n');
+ pdf+=`trailer\n<< /Size ${objs.length+1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+ return new Blob([pdf],{type:'application/pdf'});
+}
+$('pdf').addEventListener('click',()=>{
+ const btn=$('pdf'),old=btn.textContent;
+ try{
+  btn.disabled=true;btn.textContent='Preparando PDF...';
+  const blob=makeLocalPDF(),month=$('month').value||'relatorio';
+  const file=new File([blob],`Gardy-Horas-Pro-Relatorio-${safeFileName(activeProfileName)}-${month}.pdf`,{type:'application/pdf'});
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+   navigator.share({files:[file],title:'Relatório profissional Gardy Horas Pro'}).then(()=>msg('PDF pronto para compartilhar ou salvar em Arquivos.')).catch(err=>{
+    if(err.name!=='AbortError')downloadPDF(blob,file.name);
+   });
+  }else downloadPDF(blob,file.name);
+ }catch(err){msg('Erro ao gerar PDF: '+(err.message||'tente novamente.'),true);}
+ finally{btn.disabled=false;btn.textContent=old;}
+});
+function downloadPDF(blob,name){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download=name;a.target='_blank';a.rel='noopener';
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),120000);
+ msg('PDF gerado. Se não baixar automaticamente, abra Compartilhar e escolha Salvar em Arquivos.');
+}
+migrateLegacyToActive();
+updateProfileLabel();
+restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
+// Carrega o perfil ativo; dados antigos são migrados quando o usuário confirma o nome.
+load();
+initAuth();
+
+// Atualização de emergência: remove o Service Worker antigo que podia servir
+// uma versão incompleta/desatualizada do aplicativo. Não apaga localStorage.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations()
+    .then(registrations => Promise.all(registrations.map(reg => reg.unregister())))
+    .catch(err => console.warn('Não foi possível remover o Service Worker antigo:', err));
+}
+if ('caches' in window) {
+  caches.keys()
+    .then(keys => Promise.all(keys.map(key => caches.delete(key))))
+    .catch(err => console.warn('Não foi possível limpar o cache antigo:', err));
+}
+
+</script>
+</body></html>
