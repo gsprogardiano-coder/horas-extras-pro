@@ -335,7 +335,7 @@ footer{color:#969da8}
    <div class="stat"><small>HORAS NOTURNAS (INFORMATIVO)</small><b id="nightValue">R$ 0,00</b></div>
    <div class="stat"><small>DSR ESTIMADO SOBRE ADICIONAIS</small><b id="dsrValue">R$ 0,00</b></div>
   </div>
-  <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Imprimir / salvar PDF</button></div>
+  <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Gerar relatório PDF profissional</button></div>
   <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Valor das adicionais</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
   <p class="note" id="storageNote">Os dados e configurações são salvos neste navegador e perfil. Perfis não têm senha nem sincronização pela internet. Use Backup JSON para transferir seus dados entre aparelhos; não compartilhe seu backup.</p>
  </section>
@@ -817,9 +817,9 @@ $('pdf').addEventListener('click',()=>{
  try{
   btn.disabled=true;btn.textContent='Preparando PDF...';
   const blob=makeLocalPDF(),month=$('month').value||'relatorio';
-  const file=new File([blob],`horas-extras-${safeFileName(activeProfileName)}-${month}.pdf`,{type:'application/pdf'});
+  const file=new File([blob],`Gardy-Horas-Pro-Relatorio-${safeFileName(activeProfileName)}-${month}.pdf`,{type:'application/pdf'});
   if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-   navigator.share({files:[file],title:'Relatorio Horas Extras Pro'}).then(()=>msg('PDF pronto para compartilhar ou salvar em Arquivos.')).catch(err=>{
+   navigator.share({files:[file],title:'Relatório profissional Gardy Horas Pro'}).then(()=>msg('PDF pronto para compartilhar ou salvar em Arquivos.')).catch(err=>{
     if(err.name!=='AbortError')downloadPDF(blob,file.name);
    });
   }else downloadPDF(blob,file.name);
