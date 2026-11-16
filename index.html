@@ -59,6 +59,44 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
   button{display:none!important}
   .calendar{break-inside:avoid}
 }
+
+/* GARDY HORAS PRO — tela de acesso tecnológica */
+#loginGate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:28px 18px;background:radial-gradient(ellipse at 50% 18%,#321015 0,transparent 34%),radial-gradient(ellipse at 0 100%,#2b0b12 0,transparent 28%),linear-gradient(145deg,#050608,#0b0d12 55%,#050608);color:#f5f7fb}
+#loginGate:before,#loginGate:after{content:"";position:fixed;pointer-events:none;width:38vw;height:38vw;border:1px solid #ff1d2d35;transform:rotate(45deg);box-shadow:0 0 35px #ff152522,inset 0 0 35px #ff152510}
+#loginGate:before{top:-25vw;left:-20vw}#loginGate:after{right:-24vw;bottom:-25vw}
+.login-shell{position:relative;width:min(100%,490px);margin:auto;z-index:1}
+.login-brand{text-align:center;margin:0 auto 24px}
+.login-logo-ring{width:142px;height:142px;margin:0 auto 17px;border-radius:50%;padding:10px;background:radial-gradient(circle,#0a0a0b 55%,#191b20 70%,#ff1c2d 73%,#3a0c12 78%,#090a0d 82%);border:1px solid #ff263b99;box-shadow:0 0 22px #ff1c2d55,inset 0 0 20px #ff1c2d22}
+.login-logo-ring img{width:100%;height:100%;object-fit:contain;border-radius:50%;background:#000}
+.login-title{font-weight:950;font-style:italic;letter-spacing:.035em;font-size:clamp(27px,7vw,38px);text-shadow:0 2px 10px #fff3}
+.login-title span{display:inline-block;background:linear-gradient(130deg,#ff3546,#9c0010);padding:0 9px;border-radius:8px;color:#fff}
+.login-subtitle{font-size:11px;letter-spacing:.32em;font-weight:800;color:#d8dce3;margin-top:7px}
+.login-rule{height:2px;width:110px;margin:14px auto 0;background:linear-gradient(90deg,transparent,#ff1d2d,transparent);box-shadow:0 0 12px #ff1d2d}
+.login-panel{border:1px solid #ff263b;border-radius:25px;padding:24px 22px 20px;background:linear-gradient(145deg,#17191eF2,#08090df5);box-shadow:0 0 9px #ff1d2d88,0 0 34px #ff1d2d38,inset 0 1px #ffffff16}
+.login-heading{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.login-user-icon{font-size:38px;color:#ff2538;text-shadow:0 0 16px #ff2538}
+.login-heading h1{font-size:23px;line-height:1.2;margin:0;color:#fff}
+.login-heading p{font-size:13px;color:#aeb5c0;margin:5px 0 0}
+.login-panel label{display:block;color:#b8c0ca;font-size:12px;font-weight:700;margin:12px 0 6px}
+.login-panel input{width:100%;height:53px;border-radius:14px;padding:0 16px;background:#090b10;border:1px solid #66707c;color:#fff;font-size:16px;box-shadow:inset 0 2px 9px #0009}
+.login-panel input:focus{outline:2px solid #ff263b88;border-color:#ff263b;box-shadow:0 0 14px #ff263b30}
+.gate-primary{width:100%;height:56px;margin-top:19px;border-radius:14px;background:linear-gradient(100deg,#ff263b,#b90018);border:1px solid #ff5967;color:white;font-size:17px;font-weight:900;letter-spacing:.08em;box-shadow:0 0 18px #ff1d2d77}
+.gate-primary span{font-size:24px;margin-left:10px;vertical-align:-2px}
+.gate-primary:disabled{opacity:.65}
+.gate-link{display:block;margin:13px auto 0;padding:7px;background:none;border:0;box-shadow:none;color:#c6ccd5;text-decoration:underline;font-size:13px}
+#gateStatus{min-height:18px;margin:10px 0 0;text-align:center;color:#aeb8c5;font-size:12px}
+.login-separator{height:1px;background:linear-gradient(90deg,transparent,#59616d,transparent);margin:16px 0}
+.login-create{text-align:center;color:#f0f1f4;font-size:13px}
+.login-create button{display:inline;padding:0 0 0 4px;background:none;border:0;box-shadow:none;color:#ff3345;font-weight:800;font-size:13px}
+.login-benefits{display:grid;grid-template-columns:repeat(3,1fr);margin:19px auto 0;max-width:420px}
+.login-benefits div{display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;color:#e8eaf0;font-size:12px;line-height:1.35}
+.login-benefits div+div{border-left:1px solid #555b65}
+.login-benefits b{font-size:28px;line-height:1;color:#ff263b;text-shadow:0 0 12px #ff263b88}
+.login-foot{text-align:center;color:#68717e;font-size:9px;letter-spacing:.2em;margin-top:22px}
+body:not(.authenticated)>header,body:not(.authenticated)>main,body:not(.authenticated)>footer{display:none!important}
+body.authenticated #loginGate{display:none!important}
+@media(max-width:430px){#loginGate{padding:22px 14px}.login-logo-ring{width:116px;height:116px}.login-panel{padding:20px 17px 17px;border-radius:21px}.login-heading h1{font-size:21px}.login-title{font-size:29px}}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -71,13 +109,44 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
 <meta name="description" content="Controle pessoal de jornada e cálculo estimado de horas extras.">
 </head>
 <body>
+
+<!-- PORTA DE ENTRADA: autenticação obrigatória antes do painel -->
+<section id="loginGate" aria-label="Acesso ao Gardy Horas Pro">
+  <div class="login-shell">
+    <div class="login-brand">
+      <div class="login-logo-ring"><img src="./logo-gardy.png" alt="Logo VJ Gardy"></div>
+      <div class="login-title">GARDY HORAS <span>PRO</span></div>
+      <div class="login-subtitle">CONTROLE DE HORAS EXTRAS</div>
+      <div class="login-rule"></div>
+    </div>
+    <div class="login-panel">
+      <div class="login-heading"><span class="login-user-icon">◉</span><div><h1>Acesse sua conta</h1><p>Entre para acessar seus registros e cálculos.</p></div></div>
+      <label for="gateEmail">E-mail</label>
+      <input id="gateEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com">
+      <label for="gatePassword">Senha</label>
+      <input id="gatePassword" type="password" autocomplete="current-password" placeholder="Sua senha">
+      <button id="gateSignIn" class="gate-primary" type="button">ENTRAR <span>→</span></button>
+      <button id="gateReset" class="gate-link" type="button">Esqueci minha senha</button>
+      <p id="gateStatus" role="status" aria-live="polite">Entre com sua conta ou crie uma gratuitamente.</p>
+      <div class="login-separator"></div>
+      <div class="login-create">Ainda não tem conta? <button id="gateSignUp" type="button">Criar conta grátis</button></div>
+    </div>
+    <div class="login-benefits">
+      <div><b>ϟ</b><span>Cálculos<br>precisos</span></div>
+      <div><b>☁</b><span>Sincronização<br>na nuvem</span></div>
+      <div><b>♢</b><span>Seus dados<br>protegidos</span></div>
+    </div>
+    <div class="login-foot">ACESSO SEGURO · GRATUITO · GARDY</div>
+  </div>
+</section>
+
 <header>
   <div class="brand"><img class="logo-img" src="./logo-gardy.png" alt="Logo Gardy VJ"><div>HORAS EXTRAS PRO</div><span class="pill">PESSOAL</span></div>
   <div class="sub">Controle de jornada variável · jornada urbana · pagamento de horas extras</div>
   <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
 </header>
 <main>
- <section class="card" style="margin-bottom:16px" id="accountCard">
+ <section class="card" style="margin-bottom:16px;display:none" id="accountCard">
   <h2>Conta e sincronização na nuvem</h2>
   <p class="note" style="margin-top:-8px">Crie sua conta gratuita para acessar seus registros em outros aparelhos. Seus dados ficam privados na sua conta.</p>
   <div class="fields">
@@ -198,7 +267,8 @@ let sb=null, authUser=null, cloudBusy=false, authReady=false;
 try{if(window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(e){console.error('Supabase indisponível',e)}
 function authMessage(t,bad=false){$('authStatus').textContent=t;$('authStatus').style.color=bad?'#ff829b':'#8fa6c1'}
 function pixMessage(t,bad=false){$('pixStatus').textContent=t;$('pixStatus').style.color=bad?'#ff829b':'#8fa6c1'}
-function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; if(authUser)authMessage('Conectado como '+authUser.email+'. Sincronização ativada.'); }
+function gateMessage(t,bad=false){const el=$('gateStatus');if(el){el.textContent=t;el.style.color=bad?'#ff829b':'#aeb8c5'}}
+function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){authMessage('Conectado como '+authUser.email+'. Sincronização ativada.');gateMessage('Acesso autorizado.');} }
 function crc16(str){let crc=0xFFFF;for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
 function tlv(id,value){const v=String(value);return id+String(v.length).padStart(2,'0')+v}
 function makePixPayload(amount){
@@ -225,10 +295,36 @@ async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
  const sr=settingsRows?.[0];if(sr){const saved=sr.settings_data||{};if(sr.salary!==undefined)saved.salary=String(sr.salary);if(sr.weekday_hours!==undefined)saved.daily=String(sr.weekday_hours);Object.entries(saved).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v});saveSettings();}
  localStorage.setItem(PROFILE_NAME_KEY,authUser.user_metadata?.full_name||authUser.email||activeProfileName);activeProfileName=localStorage.getItem(PROFILE_NAME_KEY);$('profileName').value=activeProfileName;updateProfileLabel();load();authMessage('Conta conectada. Sincronização concluída.');
  }catch(e){authMessage('Não foi possível sincronizar: '+(e.message||e)+'. Confira as tabelas e políticas RLS no Supabase.',true)}finally{cloudBusy=false}}
-async function initAuth(){if(!sb){authMessage('Não foi possível carregar o serviço de login. Verifique sua conexão.',true);return}try{const {data,error}=await sb.auth.getSession();if(error)throw error;authUser=data.session?.user||null;setAuthUI();if(authUser)await syncCloud();authReady=true;sb.auth.onAuthStateChange((event,session)=>{authUser=session?.user||null;setAuthUI();if(event==='SIGNED_IN'&&authUser)setTimeout(()=>syncCloud(),0)});}catch(e){authMessage('Erro ao iniciar login: '+(e.message||e),true)}}
+async function initAuth(){if(!sb){const m='Não foi possível carregar o serviço de login. Verifique sua conexão e atualize a página.';authMessage(m,true);gateMessage(m,true);return}try{const {data,error}=await sb.auth.getSession();if(error)throw error;authUser=data.session?.user||null;if(authUser)await syncCloud();setAuthUI();authReady=true;sb.auth.onAuthStateChange((event,session)=>{authUser=session?.user||null;setAuthUI();if(event==='SIGNED_IN'&&authUser)setTimeout(()=>syncCloud(),0)});}catch(e){const m='Erro ao iniciar login: '+(e.message||e);authMessage(m,true);gateMessage(m,true)}}
+
+function gateCredentials(){return {email:$('gateEmail').value.trim(),password:$('gatePassword').value};}
+$('gateSignIn').addEventListener('click',async()=>{
+ if(!sb){gateMessage('Serviço de login indisponível. Verifique sua conexão.',true);return}
+ const {email,password}=gateCredentials();
+ if(!email||!password){gateMessage('Informe seu e-mail e sua senha.',true);return}
+ const btn=$('gateSignIn');btn.disabled=true;btn.textContent='ENTRANDO...';
+ try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;authUser=data.user;await syncCloud();setAuthUI();}
+ catch(e){gateMessage('Não foi possível entrar: '+(e.message||e),true);}
+ finally{btn.disabled=false;btn.innerHTML='ENTRAR <span>→</span>';}
+});
+$('gateSignUp').addEventListener('click',async()=>{
+ if(!sb){gateMessage('Serviço de cadastro indisponível. Verifique sua conexão.',true);return}
+ const {email,password}=gateCredentials();
+ if(!email||password.length<6){gateMessage('Informe um e-mail válido e senha com pelo menos 6 caracteres.',true);return}
+ const btn=$('gateSignUp');btn.disabled=true;
+ try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'}});if(error)throw error;
+ if(data.session){authUser=data.user;await syncCloud();setAuthUI();}else gateMessage('Cadastro criado! Confirme seu e-mail e depois entre.');
+ }catch(e){gateMessage('Não foi possível criar a conta: '+(e.message||e),true)}finally{btn.disabled=false}
+});
+$('gateReset').addEventListener('click',async()=>{
+ if(!sb){gateMessage('Serviço de recuperação indisponível.',true);return}
+ const email=$('gateEmail').value.trim();if(!email){gateMessage('Digite seu e-mail para receber o link de recuperação.',true);return}
+ try{const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'});if(error)throw error;gateMessage('Enviamos um link de recuperação para seu e-mail.');}
+ catch(e){gateMessage('Não foi possível enviar o link: '+(e.message||e),true)}
+});
 $('signUpBtn').addEventListener('click',async()=>{if(!sb){authMessage('Serviço de login não carregou. Atualize a página e tente novamente.',true);return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<6){authMessage('Informe um e-mail válido e senha com pelo menos 6 caracteres.',true);return}try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'} });if(error)throw error;if(data.session){authUser=data.user;setAuthUI();await syncCloud()}else authMessage('Cadastro iniciado. Confirme seu e-mail e depois entre no aplicativo.');}catch(e){authMessage('Não foi possível criar a conta: '+(e.message||e),true)}});
 $('signInBtn').addEventListener('click',async()=>{if(!sb){authMessage('Serviço de login não carregou. Atualize a página e tente novamente.',true);return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||!password){authMessage('Informe e-mail e senha.',true);return}try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;authUser=data.user;setAuthUI();await syncCloud()}catch(e){authMessage('Não foi possível entrar: '+(e.message||e),true)}});
-$('signOutBtn').addEventListener('click',async()=>{if(!sb)return;try{const {error}=await sb.auth.signOut();if(error)throw error;authUser=null;setAuthUI();authMessage('Você saiu. Seus dados locais permanecem neste aparelho.')}catch(e){authMessage('Erro ao sair: '+(e.message||e),true)}});
+$('signOutBtn').addEventListener('click',async()=>{if(!sb)return;try{const {error}=await sb.auth.signOut();if(error)throw error;authUser=null;setAuthUI();gateMessage('Você saiu da conta. Entre novamente para continuar.');authMessage('Você saiu. Seus dados locais permanecem neste aparelho.')}catch(e){authMessage('Erro ao sair: '+(e.message||e),true)}});
 
 const LEGACY_KEY='horas-extras-pro-v1';
 const LEGACY_SETTINGS_KEY='horas-extras-pro-settings-v1';
