@@ -72,7 +72,7 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
 <header>
   <div class="brand"><img class="logo-img" src="./logo-gardy.png" alt="Logo Gardy VJ"><div>HORAS EXTRAS PRO</div><span class="pill">PESSOAL</span></div>
   <div class="sub">Controle de jornada variável · jornada urbana · pagamento de horas extras</div>
-  <div class="hero"><div><small>TOTAL BRUTO ESTIMADO NO MÊS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo</div></div></div>
+  <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo</div></div></div>
 </header>
 <main>
  <section class="card" style="margin-bottom:16px" id="profileCard">
@@ -90,13 +90,13 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
     <div class="field"><label for="salary">Salário mensal (R$)</label><input id="salary" type="number" min="0" step=".01" value=""></div>
     <div class="field"><label for="divisor">Divisor mensal</label><select id="divisor"><option>220</option><option>200</option><option>180</option></select></div>
     <div class="field"><label for="daily">Jornada normal diária</label><input id="daily" type="number" min="1" max="24" step=".25" value="8"></div>
-    <div class="field"><label for="extraRate">Adicional sobre hora extra (%)</label><input id="extraRate" type="number" min="0" max="300" value="0"></div>
-    <div class="field"><label for="nightRate">Adicional noturno (%)</label><input id="nightRate" type="number" min="0" max="100" value="20"></div>
+    <div class="field" style="display:none"><label for="extraRate">Adicional sobre hora extra (%)</label><input id="extraRate" type="number" min="0" max="300" value="0" readonly></div>
+    <div class="field" style="display:none"><label for="nightRate">Adicional noturno (%)</label><input id="nightRate" type="number" min="0" max="100" value="0" readonly></div>
     <div class="field"><label for="month">Mês de referência</label><input id="month" type="month"></div>
     <div class="field"><label for="dsrWorkdays">Dias úteis para DSR</label><input id="dsrWorkdays" type="number" min="1" max="31" value="26"></div>
     <div class="field"><label for="dsrRestdays">Repousos + feriados no mês</label><input id="dsrRestdays" type="number" min="0" max="31" value="4"></div>
    </div>
-   <p class="note">Configuração inicial: salário R$ 6.000, divisor 220, escala 6x1, 8h por dia. Ajuste conforme contrato e convenção coletiva.</p>
+   <p class="note">Configure seu salário, divisor e jornada normal de segunda a sexta. Aos sábados, o aplicativo considera 4 horas normais; aos domingos, todas as horas trabalhadas são adicionais.</p>
   </section>
   <section class="card">
    <h2>02 · Registrar jornada</h2>
@@ -127,14 +127,14 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
    <div class="stat"><small>DIAS REGISTRADOS</small><b id="days">0</b></div>
    <div class="stat"><small>FOLGAS REGISTRADAS</small><b id="offDays">0</b></div>
    <div class="stat"><small>HORAS TRABALHADAS</small><b id="worked">0h</b></div>
-   <div class="stat"><small>HORAS EXTRAS (DIÁRIAS)</small><b id="overtime">0h</b></div>
+   <div class="stat"><small>HORAS ADICIONAIS</small><b id="overtime">0h</b></div>
    <div class="stat"><small>HORAS NOTURNAS (RELÓGIO)</small><b id="night">0h</b></div>
    <div class="stat"><small>VALOR DAS HORAS EXTRAS</small><b id="extraValue">R$ 0,00</b></div>
-   <div class="stat"><small>ADICIONAL NOTURNO ESTIMADO</small><b id="nightValue">R$ 0,00</b></div>
+   <div class="stat"><small>HORAS NOTURNAS (INFORMATIVO)</small><b id="nightValue">R$ 0,00</b></div>
    <div class="stat"><small>DSR ESTIMADO SOBRE ADICIONAIS</small><b id="dsrValue">R$ 0,00</b></div>
   </div>
   <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Imprimir / salvar PDF</button></div>
-  <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Estimativa</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
+  <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Valor das adicionais</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
   <p class="note" id="storageNote">Os dados e configurações são salvos neste navegador e perfil. Perfis não têm senha nem sincronização pela internet. Use Backup JSON para transferir seus dados entre aparelhos; não compartilhe seu backup.</p>
  </section>
  <section class="card" style="margin-top:16px" id="salaryCalc">
@@ -157,9 +157,9 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
  <section class="card" style="margin-top:16px">
   <h2>Como o cálculo funciona</h2>
   <p style="margin:0 0 8px">• Hora normal = salário mensal ÷ divisor.</p>
-  <p style="margin:0 0 8px">• Pagamento de hora extra = horas acima da jornada diária configurada × valor-hora. O adicional está configurado em 0% por padrão; altere somente se houver pagamento adicional.</p>
-  <p style="margin:0 0 8px">• Período noturno urbano considerado: 22h às 5h, com hora noturna reduzida de 52min30s e adicional mínimo de 20% configurável.</p>
-  <p class="note">O valor das horas extras é exibido separadamente do salário e não é somado à simulação da folha. Este modo representa o pagamento informado pelo usuário (hora normal, sem adicional de 50% por padrão); não significa que adicionais ou reflexos previstos em lei estejam dispensados. O DSR é uma estimativa separada e pode não refletir todos os direitos aplicáveis. Confirme as regras com RH, contador ou sindicato.</p>
+  <p style="margin:0 0 8px">• Horas adicionais: de segunda a sexta, o que ultrapassar a jornada diária configurada; sábado, o que ultrapassar 4 horas; domingo, todas as horas trabalhadas. Valor = quantidade de horas adicionais × valor da hora normal, sem multiplicador percentual.</p>
+  <p style="margin:0 0 8px">• Horas noturnas são apenas informativas e não acrescentam valor ao pagamento calculado.</p>
+  <p class="note">O valor das horas adicionais é exibido separadamente do salário e não é somado à simulação da folha. O cálculo segue a forma de pagamento informada pelo usuário, sem multiplicadores de 50% ou 100%. O DSR aparece apenas como referência separada e não é somado ao valor principal. Outros reflexos legais não estão incluídos.</p>
  </section>
 </main>
 <footer>Horas Extras Pro · Protótipo web local · Não substitui espelho de ponto oficial nem orientação trabalhista.</footer>
@@ -209,9 +209,9 @@ function switchProfile(name){
   entries=[];
   // Evita carregar as configurações do perfil anterior.
   ['salary','divisor','daily','extraRate','nightRate','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>$(id).value='');
-  $('divisor').value='220';$('daily').value='8';$('extraRate').value='0';$('nightRate').value='20';
+  $('divisor').value='220';$('daily').value='8';$('extraRate').value='0';$('nightRate').value='0';
   $('dsrWorkdays').value='26';$('dsrRestdays').value='4';$('dependents').value='0';$('otherDiscounts').value='0';
-  restoreSettings();updateProfileLabel();load();saveSettings();
+  restoreSettings();$('extraRate').value='0';$('nightRate').value='0';updateProfileLabel();load();saveSettings();
   msg('Perfil de '+activeProfileName+' aberto. Os dados estão separados.');
 }
 
@@ -255,13 +255,14 @@ function calc(e){
  let worked=en-s-br;
  let n=e.hasBreak?overlapNight(s,bs)+overlapNight(be,en):overlapNight(s,en);
  let nightEq=n/(52.5/60);
- let normal=Math.max(0,Number($('daily').value)||8)*60;
- let extra=Math.max(0,worked-normal)/60;
+ const dayOfWeek=new Date(e.date+'T12:00:00').getDay();
+ let normalMinutes=dayOfWeek===0?0:(dayOfWeek===6?4*60:Math.max(0,Number($('daily').value)||8)*60);
+ let extra=Math.max(0,worked-normalMinutes)/60;
  let rate=Math.max(0,Number($('salary').value)||0)/Math.max(1,Number($('divisor').value)||220);
- let extraVal=extra*rate*(1+Math.max(0,Number($('extraRate').value)||0)/100);
- // Simplified night premium uses reduced-hour equivalent; excludes separate interaction/reflex calculations.
- let nightVal=nightEq*rate*Math.max(0,Number($('nightRate').value)||0)/100;
- return {worked,night:n,nightEq,extra,extraVal,nightVal,total:extraVal+nightVal,br};
+ // Pagamento informado: somente horas adicionais x valor da hora normal.
+ let extraVal=extra*rate;
+ let nightVal=0;
+ return {worked,night:n,nightEq,extra,extraVal,nightVal,total:extraVal,br};
 }
 function fmtHours(m){let h=Math.floor(m/60),mi=Math.round(m%60);if(mi===60){h++;mi=0}return `${h}h${mi?` ${mi}min`:''}`}
 function monthEntries(){return entries.filter(e=>e.date.startsWith($('month').value)).sort((a,b)=>a.date.localeCompare(b.date))}
@@ -356,7 +357,7 @@ function render(){
  const wd=Math.max(1,Number($('dsrWorkdays').value)||1),rd=Math.max(0,Number($('dsrRestdays').value)||0);
  const dsr=(ev+nv)/wd*rd;
  renderSalary(list,ev,nv,dsr);
- $('days').textContent=list.length;$('offDays').textContent=offDays;$('worked').textContent=fmtHours(worked);$('overtime').textContent=extra.toFixed(2)+'h';$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('dsrValue').textContent=money(dsr);$('heroTotal').textContent=money(ev+nv+dsr);
+ $('days').textContent=list.length;$('offDays').textContent=offDays;$('worked').textContent=fmtHours(worked);$('overtime').textContent=extra.toFixed(2)+'h';$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('dsrValue').textContent=money(dsr);$('heroTotal').textContent=money(ev);
  renderCalendar(list);
 }
 function msg(t,bad=false){$('formMsg').textContent=t;$('formMsg').style.color=bad?'#bd4545':'#167a59'}
@@ -445,7 +446,7 @@ function makeLocalPDF(){
  add('Relatorio mensal - '+month,10);
  add('Dias registrados: '+$('days').textContent+' | Folgas: '+$('offDays').textContent+' | Horas trabalhadas: '+$('worked').textContent);
  add('Horas extras: '+$('overtime').textContent+' | Horas noturnas: '+$('night').textContent);
- add('Valor extras: '+$('extraValue').textContent+' | Adicional noturno: '+$('nightValue').textContent+' | DSR: '+$('dsrValue').textContent);
+ add('Valor das horas adicionais (sem multiplicador): '+$('extraValue').textContent);
  add(' ');
  add('LANCAMENTOS',12,true);
  add('Data       Tipo       Entrada  Saida   Intervalo       Trabalhadas  Extras  Noturnas  Valor',8,true);
@@ -512,7 +513,7 @@ function downloadPDF(blob,name){
 }
 migrateLegacyToActive();
 updateProfileLabel();
-restoreSettings();
+restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 // Carrega o perfil ativo; dados antigos são migrados quando o usuário confirma o nome.
 load();
 
