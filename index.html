@@ -97,6 +97,116 @@ body:not(.authenticated)>header,body:not(.authenticated)>main,body:not(.authenti
 body.authenticated #loginGate{display:none!important}
 @media(max-width:430px){#loginGate{padding:22px 14px}.login-logo-ring{width:116px;height:116px}.login-panel{padding:20px 17px 17px;border-radius:21px}.login-heading h1{font-size:21px}.login-title{font-size:29px}}
 
+
+
+/* GARDY HORAS PRO v17 — identidade tecnológica aplicada a TODO o painel */
+:root{
+  color-scheme:dark;
+  --navy:#090b10;--navy2:#17191f;--mint:#ff263b;
+  --bg:#050608;--ink:#f4f5f7;--muted:#a2a8b2;--line:#343840;
+  --card:#111318;--red:#ff263b;
+}
+html{background:#050608;color-scheme:dark}
+body{
+  color:#f4f5f7;
+  background:
+    linear-gradient(180deg,rgba(4,5,8,.78),rgba(4,5,8,.91)),
+    url('./interface-tech-bg.png') center top/cover fixed,
+    #050608;
+  background-attachment:fixed;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(ellipse at 50% 12%,rgba(255,28,45,.10),transparent 40%),
+             linear-gradient(90deg,rgba(255,28,45,.025),transparent 18%,transparent 82%,rgba(255,28,45,.025));
+}
+header{
+  position:relative;overflow:hidden;
+  background:linear-gradient(120deg,rgba(5,6,9,.97),rgba(18,19,24,.96) 62%,rgba(30,8,13,.96));
+  border-bottom:1px solid #9c1d2b;padding-top:20px;padding-bottom:25px;
+  box-shadow:0 12px 34px #0009,0 1px 0 #ff263b33;
+}
+header:after{
+  height:2px;opacity:1;
+  background:linear-gradient(90deg,transparent,#ff263b 18%,#ff7a84 50%,#ff263b 82%,transparent);
+  box-shadow:0 0 15px #ff263b99;
+}
+.brand{letter-spacing:.11em;text-shadow:0 0 16px #ff263b38}
+.logo-img{background:#000;border:1px solid #ff263b88;border-radius:14px;box-shadow:0 0 18px #ff263b35}
+.sub,header .hero small{color:#aeb3bd}
+.hero strong{color:#ff394d!important;text-shadow:0 0 20px #ff263b66}
+main{position:relative;z-index:1;padding-top:22px}
+.card{
+  color:#f2f3f5;
+  background:linear-gradient(145deg,rgba(22,24,30,.97),rgba(9,10,14,.97));
+  border:1px solid #3b3e47;border-radius:17px;
+  box-shadow:0 10px 28px #0008,inset 0 1px #ffffff0c,0 0 0 1px #ff263b08;
+  backdrop-filter:blur(8px);
+}
+.card h2{color:#fff;letter-spacing:.025em;font-size:17px}
+.card h2:after{content:"";display:block;width:54px;height:2px;margin-top:9px;background:linear-gradient(90deg,#ff263b,transparent);box-shadow:0 0 9px #ff263b66}
+.fields label,label{color:#c0c4cc}
+input,select{
+  background:linear-gradient(180deg,#090b10,#101217);color:#f5f5f6;
+  border:1px solid #555b66;border-radius:11px;box-shadow:inset 0 2px 8px #0009;
+}
+input::placeholder{color:#747b86}
+input:focus,select:focus{outline:2px solid #ff263b44;border-color:#ff394d;box-shadow:0 0 0 3px #ff263b18,0 0 15px #ff263b22}
+button{
+  background:linear-gradient(110deg,#ff263b,#a90017);color:#fff;
+  border:1px solid #ff5967;box-shadow:0 4px 14px #0007,0 0 12px #ff263b22;
+  border-radius:11px;font-weight:800;
+}
+button:hover{filter:brightness(1.12);box-shadow:0 4px 18px #ff263b44}
+button.secondary{background:linear-gradient(140deg,#24272e,#121419);color:#f1f2f4;border:1px solid #555b66;box-shadow:inset 0 1px #ffffff0b}
+button.danger{background:linear-gradient(140deg,#4a111c,#210a10);color:#ff9ba5;border:1px solid #a72b3b}
+.stat{
+  background:linear-gradient(145deg,#1b1d23,#0c0e12);
+  border:1px solid #3d414a;border-radius:13px;box-shadow:inset 0 1px #ffffff0b,0 5px 14px #0005;
+}
+.stat small{color:#aeb4be;letter-spacing:.045em}
+.stat b{color:#ff4053;text-shadow:0 0 13px #ff263b3b}
+table{color:#eceef1}th{color:#b0b5bf}th,td{border-bottom:1px solid #343840}
+th{background:#17191f}
+.tablewrap{border:1px solid #343840;border-radius:11px}
+.calhead{color:#c0c4cc}
+.calday{background:linear-gradient(145deg,#17191f,#0d0f13);border:1px solid #393d46;color:#e8e9ec}
+.calday.has{background:linear-gradient(145deg,#3b1018,#1a0c10);border-color:#b52a3c;color:#ff9ba5;box-shadow:inset 0 0 13px #ff263b22}
+.calday.off{background:#2a1a15;border-color:#94512f;color:#ffc092}
+.calday.today{outline:2px solid #ff263b;box-shadow:0 0 12px #ff263b55}
+.note{color:#a3a9b3}.pill{background:#35121a;color:#ff9aa5;border:1px solid #8f2534}
+.empty{color:#9ca3ad}
+.monthrow strong,.monthrow span{color:#d8dbe0}
+#accountCard{background:linear-gradient(145deg,#17191f,#0c0e12);border-color:#7d2633}
+#accountCard .note{color:#aeb4be}
+body.authenticated #accountCard .fields{display:none}
+body.authenticated #accountCard h2{margin-bottom:8px}
+body.authenticated #accountCard .actions{margin-top:8px}
+#donationCard{border-color:#66303a}
+#donationCard h2:after{background:linear-gradient(90deg,#ff263b,#ff263b00)}
+footer{color:#969da8}
+@media(max-width:760px){
+  header{padding-left:17px;padding-right:17px}
+  main{padding-left:12px;padding-right:12px;padding-top:15px}
+  .card{border-radius:15px;padding:16px}
+  .stats{gap:8px}.stat{padding:11px}.stat b{font-size:19px}
+  .calendar{gap:4px}.calday{min-height:43px}
+}
+@media(prefers-reduced-motion:no-preference){
+  .card,button,.stat{transition:box-shadow .2s ease,border-color .2s ease,transform .2s ease}
+  .card:hover{border-color:#71303b;box-shadow:0 12px 32px #0009,0 0 15px #ff263b12}
+}
+@media print{
+  body{background:#fff!important}
+  body:before{display:none!important}
+  header{background:#fff!important;border:0!important;box-shadow:none!important}
+  .card{background:#fff!important;border:1px solid #bbb!important;color:#111!important}
+  .card h2:after{display:none!important}
+  .stat{background:#f3f3f3!important;border:1px solid #ccc!important}
+  .stat b,.stat small,.note,th,td{color:#111!important;text-shadow:none!important}
+  button{display:none!important}
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -146,7 +256,7 @@ body.authenticated #loginGate{display:none!important}
   <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
 </header>
 <main>
- <section class="card" style="margin-bottom:16px;display:none" id="accountCard">
+ <section class="card" style="margin-bottom:16px" id="accountCard">
   <h2>Conta e sincronização na nuvem</h2>
   <p class="note" style="margin-top:-8px">Crie sua conta gratuita para acessar seus registros em outros aparelhos. Seus dados ficam privados na sua conta.</p>
   <div class="fields">
