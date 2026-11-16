@@ -210,6 +210,33 @@ footer{color:#969da8}
 
 .calday.absence-justified{border-color:#2f9d72;background:rgba(47,157,114,.12)}
 .calday.absence-unjustified{border-color:#e33b50;background:rgba(227,59,80,.14)}
+
+/* Menu e histórico Gardy */
+.gardy-nav{position:sticky;top:0;z-index:1000;background:rgba(10,11,15,.97);backdrop-filter:blur(12px);border-bottom:1px solid #64202a;padding:9px 14px;display:flex;align-items:center;gap:9px}
+.gardy-nav button{padding:10px 13px;font-size:13px;white-space:nowrap}
+.gardy-nav .nav-toggle{min-width:42px;background:#202127;border:1px solid #555}
+.gardy-nav-links{display:none;flex-wrap:wrap;gap:7px;max-width:1080px;margin:auto;padding:8px 12px;background:#111318;border-bottom:1px solid #64202a}
+.gardy-nav-links.open{display:flex}
+.gardy-nav-links button{background:#202127;border:1px solid #484b53}
+#historyCard,#reportsCard{margin-top:16px}
+.history-year{border:1px solid #4b3036;border-radius:13px;margin:10px 0;overflow:hidden;background:#111318}
+.history-year>summary{padding:13px 15px;font-weight:800;cursor:pointer;color:#fff;background:#1a171b}
+.history-month{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 13px;border-top:1px solid #343840}
+.history-month small{color:#aeb4be;display:block}
+.history-month button{padding:8px 11px;font-size:12px}
+.report-actions{display:flex;gap:9px;flex-wrap:wrap}
+#historyReportPrint{display:none}
+@media(max-width:600px){.gardy-nav{overflow-x:auto}.history-month{align-items:flex-start}.history-month button{white-space:nowrap}}
+@media print{
+ body.print-history>*:not(#historyReportPrint){display:none!important}
+ body.print-history #historyReportPrint{display:block!important;position:absolute;inset:0;background:white;color:#111;padding:20px;font:11px Arial,sans-serif}
+ #historyReportPrint h1,#historyReportPrint h2{color:#111}
+ #historyReportPrint table{width:100%;border-collapse:collapse;white-space:normal;color:#111;font-size:10px}
+ #historyReportPrint th,#historyReportPrint td{color:#111;border:1px solid #bbb;padding:5px;text-align:left}
+ #historyReportPrint .report-summary{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}
+ #historyReportPrint .report-summary div{border:1px solid #bbb;padding:8px;min-width:120px}
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -258,6 +285,21 @@ footer{color:#969da8}
   <div class="sub">Controle de jornada variável · jornada urbana · pagamento de horas extras</div>
   <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
 </header>
+
+<nav class="gardy-nav no-print" aria-label="Menu principal">
+ <button type="button" class="nav-toggle" id="gardyMenuToggle" aria-expanded="false" aria-controls="gardyMenuLinks">☰ Menu</button>
+ <span style="font-weight:800;letter-spacing:.05em;color:#fff">GARDY HORAS PRO</span>
+</nav>
+<div class="gardy-nav-links no-print" id="gardyMenuLinks">
+ <button type="button" data-go="top">Início</button>
+ <button type="button" data-go="mainTools">Marcar ponto</button>
+ <button type="button" data-go="calendarCard">Calendário</button>
+ <button type="button" data-go="historyCard">Histórico</button>
+ <button type="button" data-go="reportsCard">Relatórios</button>
+ <button type="button" data-go="salaryCalc">Calculadora</button>
+ <button type="button" data-go="accountCard">Conta</button>
+</div>
+
 <main>
  <section class="card" style="margin-bottom:16px" id="accountCard">
   <h2>Conta e sincronização na nuvem</h2>
@@ -288,7 +330,7 @@ footer{color:#969da8}
   </div>
   <p class="note" id="profileStatus">O perfil identifica o funcionário. Com login, os dados também são sincronizados na sua conta; sem login, permanecem neste aparelho.</p>
 </section>
-<div class="grid">
+<div class="grid" id="mainTools">
   <section class="card">
    <h2>01 · Configurações salariais</h2>
    <div class="fields">
@@ -320,13 +362,13 @@ footer{color:#969da8}
    <div id="formMsg" class="note" role="status"></div>
   </section>
  </div>
- <section class="card" style="margin-top:16px">
+ <section class="card" style="margin-top:16px" id="calendarCard">
   <h2>03 · Calendário mensal</h2>
   <div class="monthrow"><strong id="calendarTitle">Calendário</strong><span class="right"></span><span class="pill">Verde = trabalho · vermelho = falta não justificada · verde-claro = justificada</span></div>
   <div class="calendar" id="calendar"></div>
   <p class="note">O calendário mostra os dias com lançamentos. Toque em um dia para preencher a data no formulário.</p>
  </section>
- <section class="card" style="margin-top:16px">
+ <section class="card" style="margin-top:16px" id="summaryCard">
   <h2>04 · Resumo do mês</h2>
   <div class="stats">
    <div class="stat"><small>DIAS REGISTRADOS</small><b id="days">0</b></div>
@@ -342,6 +384,30 @@ footer{color:#969da8}
   <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Valor das adicionais</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
   <p class="note" id="storageNote">Com login, os dados são sincronizados com sua conta na nuvem. Sem login, permanecem neste aparelho. Use Backup JSON como cópia de segurança.</p>
  </section>
+
+ <section class="card" id="historyCard">
+  <h2>06 · Histórico de marcações</h2>
+  <p class="note">Todos os lançamentos organizados por ano e mês. Selecione um mês para abrir suas marcações no calendário e na tabela principal.</p>
+  <div class="monthrow"><label for="historyYearFilter">Filtrar ano</label><select id="historyYearFilter" style="max-width:150px"><option value="all">Todos os anos</option></select><span class="right"></span><strong id="historyCount">0 lançamentos</strong></div>
+  <div id="historyYears"><p class="empty">Nenhuma marcação encontrada.</p></div>
+ </section>
+ <section class="card" id="reportsCard">
+  <h2>07 · Relatórios</h2>
+  <p class="note">Gere relatórios do mês selecionado ou de todo o histórico. O arquivo Excel inclui uma aba de lançamentos e totais consolidados.</p>
+  <div class="fields" style="margin-bottom:12px">
+   <div class="field"><label for="reportMonth">Relatório mensal</label><input id="reportMonth" type="month"></div>
+   <div class="field"><label for="reportScope">Relatório consolidado</label><select id="reportScope"><option value="all">Todo o histórico</option><option value="year">Ano selecionado</option></select></div>
+  </div>
+  <div class="report-actions">
+   <button type="button" id="reportMonthPdf">PDF mensal</button>
+   <button type="button" id="reportAllPdf" class="secondary">PDF consolidado</button>
+   <button type="button" id="reportMonthXls">Excel mensal</button>
+   <button type="button" id="reportAllXls" class="secondary">Excel consolidado</button>
+  </div>
+  <p class="note" id="reportStatus" role="status"></p>
+ </section>
+ <div id="historyReportPrint" aria-hidden="true"></div>
+
  <section class="card" style="margin-top:16px" id="salaryCalc">
   <h2>05 · Simulador de salário líquido</h2>
   <p class="note" style="margin-top:-8px">Simulação estimada: salário-base, INSS/IRRF e descontos por faltas não justificadas registradas neste mês. O desconto do dia e a possível perda de um DSR por semana afetada aparecem separados. Confirme a regra aplicável à sua escala e convenção coletiva.</p>
@@ -403,7 +469,7 @@ async function cloudSaveSettings(){
   const raw=JSON.parse(localStorage.getItem(settingsKey())||'{}');
   const salary=Math.max(0,Number(raw.salary)||0);
   const divisor=Math.max(1,Number(raw.divisor)||220);
-  const row={user_id:authUser.id,salary:Number(salary.toFixed(2)),weekday_hours:Math.max(1,Math.min(24,Number(raw.daily)||8)),saturday_hours:4,sunday_hours:0,hourly_rate:Number((salary/divisor).toFixed(4)),settings_data:raw,updated_at:new Date().toISOString()};
+  const row={user_id:authUser.id,salary,weekday_hours:Number(raw.daily)||8,saturday_hours:4,sunday_hours:0,hourly_rate:Number((salary/divisor).toFixed(4)),settings_data:raw,updated_at:new Date().toISOString()};
   const {error}=await sb.from('user_settings').upsert(row,{onConflict:'user_id'});
   if(error)throw error;
  }catch(e){authMessage('Falha ao sincronizar configurações: '+(e.message||e),true);throw e}
@@ -419,20 +485,17 @@ function dayTypeFromDatabase(type){
 function dbInteger(value){
  const n=Number(value);
  if(!Number.isFinite(n))return 0;
- return Math.max(0,Math.round(n));
+ return Math.max(0,Math.trunc(n+0.5));
 }
 async function cloudSaveEntries(force=false){
  if(!sb||!authUser||(cloudBusy&&!force))return;
  try{
   const rows=entries.map(e=>{
    const c=calc(e);
-   // Todos os campos *_minutes são enviados como inteiros PostgreSQL.
    const worked=dbInteger(c.worked);
-   const dow=new Date(e.date+'T12:00:00').getDay();
-   const normalLimit=dow===0?0:(dow===6?240:Math.round((Number($('daily').value)||8)*60));
-   const additional=Math.min(worked,dbInteger(Math.max(0,worked-normalLimit)));
+   const additional=Math.min(worked,dbInteger((Number(c.extra)||0)*60));
    const normal=dbInteger(worked-additional);
-   return {user_id:authUser.id,entry_id:String(e.id),work_date:e.date,day_type:dayTypeToDatabase(e.dayType),start_time:e.start||null,end_time:e.end||null,break_minutes:dbInteger(c.br),worked_minutes:worked,normal_minutes:normal,additional_minutes:additional,notes:String(e.obs||''),entry_data:e,updated_at:new Date().toISOString()};
+   return {user_id:authUser.id,entry_id:String(e.id),work_date:e.date,day_type:dayTypeToDatabase(e.dayType),start_time:e.start||null,end_time:e.end||null,break_minutes:dbInteger(c.br),worked_minutes:worked,normal_minutes:normal,additional_minutes:additional,notes:e.obs||'',entry_data:e,updated_at:new Date().toISOString()};
   });
   if(rows.length){
    const {data:written,error}=await sb.from('work_entries').upsert(rows,{onConflict:'user_id,entry_id'}).select('entry_id');
@@ -453,7 +516,7 @@ async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
  entries=[...merged.values()].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
  if(entries.length)await cloudSaveEntries(true);
  localStorage.setItem(dataKey(),JSON.stringify(entries));
- const sr=settingsRows?.[0];if(sr){const saved={...(sr.settings_data||{})};if(sr.salary!==undefined)saved.salary=String(sr.salary);if(sr.weekday_hours!==undefined)saved.daily=String(sr.weekday_hours);Object.entries(saved).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v});saveSettings();}
+ const sr=settingsRows?.[0];if(sr){const saved=sr.settings_data||{};if(sr.salary!==undefined)saved.salary=String(sr.salary);if(sr.weekday_hours!==undefined)saved.daily=String(sr.weekday_hours);Object.entries(saved).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v});saveSettings();}
  localStorage.setItem(PROFILE_NAME_KEY,authUser.user_metadata?.full_name||authUser.email||activeProfileName);activeProfileName=localStorage.getItem(PROFILE_NAME_KEY);$('profileName').value=activeProfileName;updateProfileLabel();
  // Persiste os dados já recebidos/enviados usando a chave do perfil vinculado à conta.
  // Antes, o app mudava o nome do perfil e chamava load() sem copiar os registros
@@ -510,7 +573,7 @@ function startCloudRealtime(){
       if(!sb||!authUser)return;
       const {data,error}=await sb.from('user_settings').select('*').eq('user_id',authUser.id).limit(1);
       if(error||!data?.[0])return;
-      const saved={...(data[0].settings_data||{})};
+      const saved=data[0].settings_data||{};
       if(data[0].salary!==undefined)saved.salary=String(data[0].salary);
       if(data[0].weekday_hours!==undefined)saved.daily=String(data[0].weekday_hours);
       Object.entries(saved).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v;});
@@ -992,6 +1055,72 @@ function downloadPDF(blob,name){
  setTimeout(()=>URL.revokeObjectURL(url),120000);
  msg('PDF gerado. Se não baixar automaticamente, abra Compartilhar e escolha Salvar em Arquivos.');
 }
+
+// Navegação do menu principal
+const menuToggle=$('gardyMenuToggle'),menuLinks=$('gardyMenuLinks');
+menuToggle?.addEventListener('click',()=>{const open=menuLinks.classList.toggle('open');menuToggle.setAttribute('aria-expanded',String(open));});
+menuLinks?.addEventListener('click',ev=>{const b=ev.target.closest('[data-go]');if(!b)return;const target=b.dataset.go;if(target==='top'){window.scrollTo({top:0,behavior:'smooth'});}else $(target)?.scrollIntoView({behavior:'smooth',block:'start'});menuLinks.classList.remove('open');menuToggle.setAttribute('aria-expanded','false');});
+
+function historyGroups(){
+ const groups=new Map();
+ entries.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(e=>{
+  if(!e.date)return;const [year,month]=e.date.split('-');if(!groups.has(year))groups.set(year,new Map());const m=groups.get(year);if(!m.has(month))m.set(month,[]);m.get(month).push(e);
+ });return groups;
+}
+function historyMonthSummary(list){let worked=0,extra=0,value=0,off=0,abs=0;list.forEach(e=>{const c=calc(e);worked+=c.worked;extra+=Math.round((Number(c.extra)||0)*60);value+=c.total;if(e.dayType==='off')off++;if(String(e.dayType||'').startsWith('absence_'))abs++;});return {worked,extra,value,off,abs};}
+function renderHistory(){
+ const host=$('historyYears'),filter=$('historyYearFilter');if(!host)return;
+ const groups=historyGroups(),years=[...groups.keys()].sort((a,b)=>b.localeCompare(a));
+ const previous=filter.value||'all';filter.innerHTML='<option value="all">Todos os anos</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');filter.value=years.includes(previous)?previous:'all';
+ const visible=years.filter(y=>filter.value==='all'||filter.value===y);
+ $('historyCount').textContent=`${entries.length} lançamento(s)`;
+ if(!visible.length){host.innerHTML='<p class="empty">Nenhuma marcação encontrada.</p>';return;}
+ host.innerHTML='';
+ visible.forEach(year=>{
+  const details=document.createElement('details');details.className='history-year';details.open=filter.value!=='all';
+  const sumYear=[...groups.get(year).values()].flat();const ys=historyMonthSummary(sumYear);
+  const summary=document.createElement('summary');summary.textContent=`${year} · ${sumYear.length} lançamento(s) · ${fmtHours(ys.worked)} trabalhadas · ${fmtHours(ys.extra)} adicionais`;
+  details.appendChild(summary);
+  [...groups.get(year).keys()].sort((a,b)=>b.localeCompare(a)).forEach(month=>{
+   const list=groups.get(year).get(month),m=historyMonthSummary(list),row=document.createElement('div');row.className='history-month';
+   const label=document.createElement('div');const monthName=new Date(Number(year),Number(month)-1,1).toLocaleDateString('pt-BR',{month:'long'});label.innerHTML=`<strong>${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</strong><small>${list.length} marcação(ões) · ${fmtHours(m.worked)} trabalhadas · ${fmtHours(m.extra)} adicionais · ${money(m.value)}</small>`;
+   const btn=document.createElement('button');btn.type='button';btn.textContent='Abrir mês';btn.addEventListener('click',()=>{$('month').value=`${year}-${month}`;$('reportMonth').value=$('month').value;render();$('summaryCard').scrollIntoView({behavior:'smooth',block:'start'});});
+   row.append(label,btn);details.appendChild(row);
+  });host.appendChild(details);
+ });
+}
+$('historyYearFilter')?.addEventListener('change',renderHistory);
+
+function reportEntries(scope,month){
+ if(scope==='month')return entries.filter(e=>(e.date||'').startsWith(month)).sort((a,b)=>a.date.localeCompare(b.date));
+ if(scope==='year')return entries.filter(e=>(e.date||'').startsWith(month.slice(0,4))).sort((a,b)=>a.date.localeCompare(b.date));
+ return entries.slice().sort((a,b)=>a.date.localeCompare(b.date));
+}
+function reportMetrics(list){let worked=0,night=0,extra=0,value=0,off=0,justified=0,unjustified=0;list.forEach(e=>{const c=calc(e);worked+=c.worked;night+=c.night;extra+=Math.round((Number(c.extra)||0)*60);value+=c.total;if(e.dayType==='off')off++;if(e.dayType==='absence_justified')justified++;if(e.dayType==='absence_unjustified')unjustified++;});return {days:list.length,worked,night,extra,value,off,justified,unjustified};}
+function reportTitle(scope,month){if(scope==='month')return `Relatório mensal — ${month}`;if(scope==='year')return `Relatório anual — ${month.slice(0,4)}`;return 'Relatório geral — todo o histórico';}
+function buildReportHtml(list,title){
+ const m=reportMetrics(list);const rows=list.map(e=>{const c=calc(e),type=({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho';return `<tr><td>${e.date.split('-').reverse().join('/')}</td><td>${type}</td><td>${e.start||'—'}</td><td>${e.end||'—'}</td><td>${e.hasBreak?(e.breakStart||'')+'–'+(e.breakEnd||''):'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round((Number(c.extra)||0)*60))}</td><td>${fmtHours(c.night)}</td><td>${money(c.total)}</td><td>${String(e.obs||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td></tr>`}).join('');
+ return `<h1>GARDY HORAS PRO</h1><h2>${title}</h2><p>Funcionário: ${activeProfileName||'—'} · Gerado em ${new Date().toLocaleDateString('pt-BR')}</p><div class="report-summary"><div><b>Marcações</b><br>${m.days}</div><div><b>Horas trabalhadas</b><br>${fmtHours(m.worked)}</div><div><b>Horas adicionais</b><br>${fmtHours(m.extra)}</div><div><b>Valor adicional</b><br>${money(m.value)}</div><div><b>Horas noturnas</b><br>${fmtHours(m.night)}</div><div><b>Folgas</b><br>${m.off}</div><div><b>Faltas justificadas</b><br>${m.justified}</div><div><b>Faltas não justificadas</b><br>${m.unjustified}</div></div><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Adicionais</th><th>Noturnas</th><th>Valor adicional</th><th>Observação</th></tr></thead><tbody>${rows||'<tr><td colspan="10">Nenhum lançamento neste período.</td></tr>'}</tbody></table><p>As horas adicionais são apresentadas separadamente do salário. DSR é uma estimativa e não está somado ao valor das horas adicionais.</p>`;
+}
+function printHistory(scope){const month=$('reportMonth').value||$('month').value;const list=reportEntries(scope,month);$('historyReportPrint').innerHTML=buildReportHtml(list,reportTitle(scope,month));document.body.classList.add('print-history');window.print();setTimeout(()=>document.body.classList.remove('print-history'),700);$('reportStatus').textContent=`Relatório preparado: ${list.length} lançamento(s). Na janela de impressão, escolha Salvar como PDF.`;}
+function excelEscape(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function exportExcel(scope){
+ const month=$('reportMonth').value||$('month').value,list=reportEntries(scope,month),m=reportMetrics(list),title=reportTitle(scope,month);
+ const headers=['Data','Tipo','Entrada','Saída','Intervalo','Trabalhadas (min)','Adicionais (h)','Noturnas (min)','Valor adicional (R$)','Observação'];
+ const data=list.map(e=>{const c=calc(e);return [e.date,({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho',e.start||'',e.end||'',e.hasBreak?(e.breakStart||'')+'-'+(e.breakEnd||''):'',Math.round(c.worked),Number(c.extra||0).toFixed(2),Math.round(c.night),Number(c.total||0).toFixed(2),e.obs||''];});
+ const sheet=(name,rows)=>`<Worksheet ss:Name="${name}"><Table>${rows.map(row=>'<Row>'+row.map(v=>`<Cell><Data ss:Type="${typeof v==='number'?'Number':'String'}">${excelEscape(v)}</Data></Cell>`).join('')+'</Row>').join('')}</Table></Worksheet>`;
+ const summary=[['Relatório',title],['Funcionário',activeProfileName||''],['Marcações',m.days],['Horas trabalhadas (min)',m.worked],['Horas adicionais (min)',m.extra],['Valor adicional (R$)',Number(m.value.toFixed(2))],['Horas noturnas (min)',m.night],['Folgas',m.off],['Faltas justificadas',m.justified],['Faltas não justificadas',m.unjustified]];
+ const xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheet('Resumo',summary)}${sheet('Lancamentos',[headers,...data])}</Workbook>`;
+ const blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Gardy-Horas-Pro-${scope}-${safeFileName(activeProfileName)}-${month||'historico'}.xls`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);$('reportStatus').textContent=`Excel exportado com ${list.length} lançamento(s), em duas planilhas: Resumo e Lançamentos.`;
+}
+$('reportMonthPdf')?.addEventListener('click',()=>printHistory('month'));
+$('reportAllPdf')?.addEventListener('click',()=>printHistory($('reportScope').value));
+$('reportMonthXls')?.addEventListener('click',()=>exportExcel('month'));
+$('reportAllXls')?.addEventListener('click',()=>exportExcel($('reportScope').value));
+$('reportMonth')?.addEventListener('change',()=>{});
+const oldRenderForHistory=render;
+render=function(){oldRenderForHistory();renderHistory();if($('reportMonth')&&$('month')&& !$('reportMonth').value)$('reportMonth').value=$('month').value;};
+
 migrateLegacyToActive();
 updateProfileLabel();
 restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
@@ -999,17 +1128,8 @@ restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 load();
 initAuth();
 
-// Atualização de emergência: remove o Service Worker antigo que podia servir
-// uma versão incompleta/desatualizada do aplicativo. Não apaga localStorage.
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations()
-    .then(registrations => Promise.all(registrations.map(reg => reg.unregister())))
-    .catch(err => console.warn('Não foi possível remover o Service Worker antigo:', err));
-}
-if ('caches' in window) {
-  caches.keys()
-    .then(keys => Promise.all(keys.map(key => caches.delete(key))))
-    .catch(err => console.warn('Não foi possível limpar o cache antigo:', err));
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('PWA offline indisponível:', err)));
 }
 
 </script>
