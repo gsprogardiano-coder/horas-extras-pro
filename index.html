@@ -207,6 +207,9 @@ footer{color:#969da8}
   button{display:none!important}
 }
 
+
+.calday.absence-justified{border-color:#2f9d72;background:rgba(47,157,114,.12)}
+.calday.absence-unjustified{border-color:#e33b50;background:rgba(227,59,80,.14)}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -304,7 +307,7 @@ footer{color:#969da8}
    <h2>02 · Registrar jornada</h2>
    <div class="fields">
     <div class="field full"><label for="date">Data</label><input id="date" type="date"></div>
-    <div class="field full"><label for="dayType">Tipo de dia</label><select id="dayType"><option value="work">Trabalho</option><option value="off">Folga</option></select></div>
+    <div class="field full"><label for="dayType">Tipo de dia</label><select id="dayType"><option value="work">Trabalho</option><option value="off">Folga</option><option value="absence_justified">Falta justificada</option><option value="absence_unjustified">Falta não justificada</option></select></div>
     <div class="field" id="startField"><label for="start">Entrada</label><input id="start" type="time" value="09:00"></div>
     <div class="field" id="endField"><label for="end">Saída</label><input id="end" type="time" value="18:00"></div>
     <div class="field" id="breakStartField"><label for="breakStart">Início do intervalo</label><input id="breakStart" type="time" value="12:00"></div>
@@ -313,13 +316,13 @@ footer{color:#969da8}
     <div class="field full"><label for="obs">Observação (opcional)</label><input id="obs" type="text" placeholder="Ex.: montagem de evento, show, desmontagem"></div>
    </div>
    <div class="actions"><button id="saveBtn">＋ Adicionar jornada</button><button class="secondary" id="cancelEdit" hidden>Cancelar edição</button><button class="secondary" id="clearForm">Limpar campos</button></div>
-   <p class="note">Escolha Trabalho ou Folga em cada data. Em dias de folga, não é necessário informar horários. Aceita saída após meia-noite.</p>
+   <p class="note">Escolha Trabalho, Folga, Falta justificada ou Falta não justificada. Ausências não exigem horários. Falta justificada é tratada como abonada; confirme o enquadramento com a empresa/convenção coletiva. Falta não justificada estima desconto do dia e um DSR por semana afetada. Aceita saída após meia-noite.</p>
    <div id="formMsg" class="note" role="status"></div>
   </section>
  </div>
  <section class="card" style="margin-top:16px">
   <h2>03 · Calendário mensal</h2>
-  <div class="monthrow"><strong id="calendarTitle">Calendário</strong><span class="right"></span><span class="pill">Verde = jornada registrada</span></div>
+  <div class="monthrow"><strong id="calendarTitle">Calendário</strong><span class="right"></span><span class="pill">Verde = trabalho · vermelho = falta não justificada · verde-claro = justificada</span></div>
   <div class="calendar" id="calendar"></div>
   <p class="note">O calendário mostra os dias com lançamentos. Toque em um dia para preencher a data no formulário.</p>
  </section>
@@ -341,7 +344,7 @@ footer{color:#969da8}
  </section>
  <section class="card" style="margin-top:16px" id="salaryCalc">
   <h2>05 · Simulador de salário líquido</h2>
-  <p class="note" style="margin-top:-8px">Simulação da folha: considera somente o salário-base, com INSS e IRRF estimados. Horas extras são apresentadas separadamente como pagamento à parte, sem descontos simulados neste aplicativo.</p>
+  <p class="note" style="margin-top:-8px">Simulação estimada: salário-base, INSS/IRRF e descontos por faltas não justificadas registradas neste mês. O desconto do dia e a possível perda de um DSR por semana afetada aparecem separados. Confirme a regra aplicável à sua escala e convenção coletiva.</p>
   <div class="fields">
    <div class="field"><label for="dependents">Dependentes para IRRF</label><input id="dependents" type="number" min="0" max="20" step="1" value="0"></div>
    <div class="field"><label for="otherDiscounts">Outros descontos (R$)</label><input id="otherDiscounts" type="number" min="0" step=".01" value="0" placeholder="VT, plano, faltas etc."></div>
@@ -351,6 +354,8 @@ footer{color:#969da8}
    <div class="stat"><small>INSS ESTIMADO</small><b id="inssPay">R$ 0,00</b></div>
    <div class="stat"><small>IRRF ESTIMADO</small><b id="irrfPay">R$ 0,00</b></div>
    <div class="stat"><small>OUTROS DESCONTOS</small><b id="otherPay">R$ 0,00</b></div>
+   <div class="stat"><small>FALTAS NÃO JUSTIFICADAS — DIAS</small><b id="absenceDayPay">R$ 0,00</b></div>
+   <div class="stat"><small>PERDA ESTIMADA DE DSR</small><b id="absenceDsrPay">R$ 0,00</b></div>
    <div class="stat"><small>TOTAL DE DESCONTOS</small><b id="deductionsPay">R$ 0,00</b></div>
    <div class="stat"><small>SALÁRIO LÍQUIDO ESTIMADO</small><b id="netPay">R$ 0,00</b></div>
   </div>
@@ -361,7 +366,7 @@ footer{color:#969da8}
   <p style="margin:0 0 8px">• Hora normal = salário mensal ÷ divisor.</p>
   <p style="margin:0 0 8px">• Horas adicionais: de segunda a sexta, o que ultrapassar a jornada diária configurada; sábado, o que ultrapassar 4 horas; domingo, todas as horas trabalhadas. Valor = quantidade de horas adicionais × valor da hora normal, sem multiplicador percentual.</p>
   <p style="margin:0 0 8px">• Horas noturnas são apenas informativas e não acrescentam valor ao pagamento calculado.</p>
-  <p class="note">O valor das horas adicionais é exibido separadamente do salário e não é somado à simulação da folha. O cálculo segue a forma de pagamento informada pelo usuário, sem multiplicadores de 50% ou 100%. O DSR aparece apenas como referência separada e não é somado ao valor principal. Outros reflexos legais não estão incluídos.</p>
+  <p class="note">O valor das horas adicionais é exibido separadamente do salário. Faltas não justificadas: estimativa de salário mensal ÷ 30 por dia ausente, mais no máximo um DSR (salário ÷ 30) por semana civil de segunda a domingo com falta não justificada. Faltas justificadas são consideradas abonadas nesta simulação. A aplicação real depende da justificativa aceita, escala, feriados e convenção coletiva; confira com o RH. Outros reflexos legais não estão incluídos.</p>
  </section>
 </main>
 <footer>Horas Extras Pro · Gardy · Gratuito · Não substitui espelho de ponto oficial nem orientação trabalhista.</footer>
@@ -521,7 +526,10 @@ function mins(t){if(!t)return NaN;let [h,m]=t.split(':').map(Number);return h*60
 function dur(a,b){return b-a}
 function overlapNight(a,b){let total=0;for(let d=-1;d<=2;d++){let ns=d*1440+22*60,ne=d*1440+29*60;total+=Math.max(0,Math.min(b,ne)-Math.max(a,ns))}return total}
 function calc(e){
- if(e.dayType==='off')return {worked:0,night:0,nightEq:0,extra:0,extraVal:0,nightVal:0,total:0,br:0};
+ const salary=Math.max(0,Number($('salary').value)||0);
+ const dayDiscount=salary/30;
+ if(e.dayType==='off'||e.dayType==='absence_justified')return {worked:0,night:0,nightEq:0,extra:0,extraVal:0,nightVal:0,total:0,br:0,absenceDayDiscount:0};
+ if(e.dayType==='absence_unjustified')return {worked:0,night:0,nightEq:0,extra:0,extraVal:0,nightVal:0,total:0,br:0,absenceDayDiscount:dayDiscount};
  let s=mins(e.start), en=mins(e.end);if(en<=s)en+=1440;
  let bs=mins(e.breakStart),be=mins(e.breakEnd), br=0;
  if(e.hasBreak){if(bs<s)bs+=1440;if(be<bs)be+=1440;br=be-bs}
@@ -532,10 +540,25 @@ function calc(e){
  let normalMinutes=dayOfWeek===0?0:(dayOfWeek===6?4*60:Math.max(0,Number($('daily').value)||8)*60);
  let extra=Math.max(0,worked-normalMinutes)/60;
  let rate=Math.max(0,Number($('salary').value)||0)/Math.max(1,Number($('divisor').value)||220);
- // Pagamento informado: somente horas adicionais x valor da hora normal.
  let extraVal=extra*rate;
  let nightVal=0;
- return {worked,night:n,nightEq,extra,extraVal,nightVal,total:extraVal,br};
+ return {worked,night:n,nightEq,extra,extraVal,nightVal,total:extraVal,br,absenceDayDiscount:0};
+}
+function absenceWeekKey(date){
+ const d=new Date(date+'T12:00:00');
+ const day=(d.getDay()+6)%7;
+ d.setDate(d.getDate()-day);
+ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function absenceDsrSummary(list){
+ const salary=Math.max(0,Number($('salary').value)||0);
+ const unjustified=list.filter(e=>e.dayType==='absence_unjustified');
+ const allUnjustified=entries.filter(e=>e.dayType==='absence_unjustified').slice().sort((a,b)=>a.date.localeCompare(b.date));
+ const firstAbsenceByWeek=new Map();
+ allUnjustified.forEach(e=>{const key=absenceWeekKey(e.date);if(!firstAbsenceByWeek.has(key))firstAbsenceByWeek.set(key,e.date);});
+ const monthKey=$('month').value||'';
+ const weeks=[...firstAbsenceByWeek.values()].filter(date=>date.startsWith(monthKey));
+ return {dayDiscount:unjustified.length*(salary/30),dsrDiscount:weeks.length*(salary/30),count:unjustified.length,weeks:weeks.length};
 }
 function fmtHours(m){let h=Math.floor(m/60),mi=Math.round(m%60);if(mi===60){h++;mi=0}return `${h}h${mi?` ${mi}min`:''}`}
 function monthEntries(){return entries.filter(e=>e.date.startsWith($('month').value)).sort((a,b)=>a.date.localeCompare(b.date))}
@@ -570,11 +593,13 @@ function renderCalendar(list){
  const first=new Date(year,monthNum-1,1).getDay(),days=new Date(year,monthNum,0).getDate();
  const byDate=new Set(list.filter(e=>(e.dayType||'work')==='work').map(e=>e.date));
  const offDate=new Set(list.filter(e=>e.dayType==='off').map(e=>e.date));
+ const justifiedDate=new Set(list.filter(e=>e.dayType==='absence_justified').map(e=>e.date));
+ const unjustifiedDate=new Set(list.filter(e=>e.dayType==='absence_unjustified').map(e=>e.date));
  for(let i=0;i<first;i++){const d=document.createElement('div');d.className='calday emptyday';cal.appendChild(d)}
  for(let day=1;day<=days;day++){
   const key=`${year}-${pad(monthNum)}-${pad(day)}`;
-  const d=document.createElement('button');d.type='button';d.className='calday'+(byDate.has(key)?' has':offDate.has(key)?' off':'')+(key===`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`?' today':'');
-  d.innerHTML=`${day}${byDate.has(key)?'<small>Trabalho</small>':offDate.has(key)?'<small>Folga</small>':''}`;
+  const d=document.createElement('button');d.type='button';d.className='calday'+(byDate.has(key)?' has':offDate.has(key)?' off':justifiedDate.has(key)?' absence-justified':unjustifiedDate.has(key)?' absence-unjustified':'')+(key===`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`?' today':'');
+  d.innerHTML=`${day}${byDate.has(key)?'<small>Trabalho</small>':offDate.has(key)?'<small>Folga</small>':justifiedDate.has(key)?'<small>Falta just.</small>':unjustifiedDate.has(key)?'<small>Falta injust.</small>':''}`;
   d.addEventListener('click',()=>{$('date').value=key;$('date').disabled=false;$('date').scrollIntoView({behavior:'smooth',block:'center'});});
   cal.appendChild(d);
  }
@@ -610,23 +635,28 @@ function renderSalary(list,ev,nv,dsr){
  const inss=calcINSS2026(gross);
  const irrf=calcIRRF2026(gross,inss,Number($('dependents').value)||0);
  const other=Math.max(0,Number($('otherDiscounts').value)||0);
- const total=inss+irrf.tax+other;
+ const abs=absenceDsrSummary(list);
+ const total=inss+irrf.tax+other+abs.dayDiscount+abs.dsrDiscount;
  $('grossPay').textContent=money(gross);
  $('inssPay').textContent=money(inss);
  $('irrfPay').textContent=money(irrf.tax);
  $('otherPay').textContent=money(other);
+ $('absenceDayPay').textContent=money(abs.dayDiscount);
+ $('absenceDsrPay').textContent=money(abs.dsrDiscount);
  $('deductionsPay').textContent=money(total);
  $('netPay').textContent=money(Math.max(0,gross-total));
- $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Tabelas mensais de 2026. Outros descontos são abatidos após INSS/IRRF e não reduzem automaticamente a base tributável.`;
+ $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Faltas não justificadas: ${abs.count} dia(s), em ${abs.weeks} semana(s) com perda estimada de DSR. Estimativa de salário/30 por dia e um DSR por semana afetada. Confirme a aplicação com o RH/convenção coletiva.`;
 }
 function render(){
  let list=monthEntries(), worked=0,night=0,extra=0,ev=0,nv=0;
  const offDays=list.filter(e=>e.dayType==='off').length;
+ const justifiedDays=list.filter(e=>e.dayType==='absence_justified').length;
+ const unjustifiedDays=list.filter(e=>e.dayType==='absence_unjustified').length;
  $('monthLabel').textContent=$('month').value||'Fechamento mensal';
  $('rows').innerHTML='';
  if(!list.length)$('rows').innerHTML='<tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr>';
  list.forEach(e=>{let c=calc(e);worked+=c.worked;night+=c.night;extra+=c.extra;ev+=c.extraVal;nv+=c.nightVal;
- let isOff=e.dayType==='off';let tr=document.createElement('tr');tr.innerHTML=`<td>${e.date.split('-').reverse().join('/')}</td><td><strong>${isOff?'Folga':'Trabalho'}</strong></td><td>${isOff?'—':e.start}</td><td>${isOff?'—':e.end}</td><td>${isOff?'—':e.hasBreak?e.breakStart+'–'+e.breakEnd:'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round(c.extra*60))}</td><td>${fmtHours(c.night)}</td><td><strong>${money(c.total)}</strong></td><td class="no-print"><button class="secondary" data-edit="${e.id}">Editar</button> <button class="secondary" data-dup="${e.id}">Duplicar</button> <button class="danger" data-del="${e.id}">Excluir</button></td>`;$('rows').appendChild(tr)});
+ let isWork=e.dayType==='work';let typeLabel=({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho';let noHours=!isWork;let tr=document.createElement('tr');tr.innerHTML=`<td>${e.date.split('-').reverse().join('/')}</td><td><strong>${typeLabel}</strong></td><td>${noHours?'—':(e.start||'—')}</td><td>${noHours?'—':(e.end||'—')}</td><td>${noHours?'—':e.hasBreak?e.breakStart+'–'+e.breakEnd:'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round(c.extra*60))}</td><td>${fmtHours(c.night)}</td><td><strong>${money(c.total)}</strong></td><td class="no-print"><button class="secondary" data-edit="${e.id}">Editar</button> <button class="secondary" data-dup="${e.id}">Duplicar</button> <button class="danger" data-del="${e.id}">Excluir</button></td>`;$('rows').appendChild(tr)});
  const wd=Math.max(1,Number($('dsrWorkdays').value)||1),rd=Math.max(0,Number($('dsrRestdays').value)||0);
  const dsr=(ev+nv)/wd*rd;
  renderSalary(list,ev,nv,dsr);
@@ -635,8 +665,8 @@ function render(){
 }
 function msg(t,bad=false){$('formMsg').textContent=t;$('formMsg').style.color=bad?'#bd4545':'#167a59'}
 function toggleDayType(){
- const off=$('dayType').value==='off';
- ['startField','endField','breakStartField','breakEndField','break2Field'].forEach(id=>$(id).hidden=off);
+ const work=$('dayType').value==='work';
+ ['startField','endField','breakStartField','breakEndField','break2Field'].forEach(id=>$(id).hidden=!work);
 }
 $('dayType').addEventListener('change',toggleDayType);
 toggleDayType();
@@ -766,10 +796,10 @@ function makeLocalPDF(){
  const addPage=()=>{footer(pageNo,0);pages.push(cmds.join('\n'));pageNo++;y=startPage(pageNo);};
  list.forEach((e,idx)=>{
   if(y<66){addPage();}
-  const c=calc(e),off=e.dayType==='off';
+  const c=calc(e),isWork=e.dayType==='work';
   const date=e.date.split('-').reverse().join('/');
-  const type=off?'FOLGA':'TRABALHO';
-  const schedule=off?'—':`${e.start} - ${e.end}${e.hasBreak?' / '+e.breakStart+'-'+e.breakEnd:''}`;
+  const type=({work:'TRABALHO',off:'FOLGA',absence_justified:'FALTA JUSTIFICADA',absence_unjustified:'FALTA NAO JUSTIFICADA'})[e.dayType]||'TRABALHO';
+  const schedule=!isWork?'—':`${e.start||'—'} - ${e.end||'—'}${e.hasBreak?' / '+e.breakStart+'-'+e.breakEnd:''}`;
   const vals=[date,type,schedule,fmtHours(c.worked),fmtHours(Math.round(c.extra*60)),fmtHours(c.night),money(c.total)];
   if(idx%2===1)rect(42,y-8,758,25,[0.975,0.978,0.982]);
   const xx=[52,112,192,345,438,523,608];
@@ -778,19 +808,23 @@ function makeLocalPDF(){
  });
  if(y<135){addPage();}
  // Fechamento financeiro e observações sempre no final.
- rect(42,y-100,758,88,C.light); rect(42,y-100,4,88,C.red);
- text('RESUMO FINANCEIRO',56,y-31,9,C.ink,true);
- text('Horas adicionais: '+($('overtime').textContent||'0h'),56,y-51,8,C.muted,false);
- text('Valor das horas adicionais: '+moneyText($('extraValue').textContent),56,y-70,10,C.red,true);
- text('DSR estimado sobre adicionais: '+moneyText($('dsrValue').textContent),340,y-51,8,C.muted,false);
- text('Horas noturnas: '+($('night').textContent||'0h'),340,y-70,8,C.muted,false);
- text('SIMULACAO DA FOLHA (ESTIMATIVA)',56,y-91,7,C.muted,true);
- y-=122;
- if(y<100){addPage();y-=10;}
- rect(42,y-67,758,62,[0.99,0.99,0.99]);
+ rect(42,y-118,758,106,C.light); rect(42,y-118,4,106,C.red);
+ text('RESUMO FINANCEIRO',56,y-25,9,C.ink,true);
+ text('Horas adicionais: '+($('overtime').textContent||'0h'),56,y-43,8,C.muted,false);
+ text('Valor das horas adicionais: '+moneyText($('extraValue').textContent),56,y-60,10,C.red,true);
+ text('DSR estimado sobre adicionais: '+moneyText($('dsrValue').textContent),340,y-43,8,C.muted,false);
+ const absenceTotals=absenceDsrSummary(list);
+ text('Desconto por faltas nao justificadas: '+money(absenceTotals.dayDiscount),56,y-78,8,C.muted,false);
+ text('Perda estimada de DSR por faltas: '+money(absenceTotals.dsrDiscount),340,y-78,8,C.muted,false);
+ text('Horas noturnas: '+($('night').textContent||'0h'),340,y-60,8,C.muted,false);
+ text('SIMULACAO DA FOLHA (ESTIMATIVA)',56,y-99,7,C.muted,true);
+ y-=140;
+ if(y<135){addPage();y-=10;}
+ rect(42,y-94,758,89,[0.99,0.99,0.99]);
  text('SALARIO BRUTO',56,y-24,7,C.muted,true); text(moneyText($('grossPay').textContent),56,y-44,10,C.ink,true);
  text('INSS ESTIMADO',245,y-24,7,C.muted,true); text(moneyText($('inssPay').textContent),245,y-44,10,C.ink,true);
  text('IRRF ESTIMADO',434,y-24,7,C.muted,true); text(moneyText($('irrfPay').textContent),434,y-44,10,C.ink,true);
+ text('FALTAS + DSR',56,y-62,7,C.muted,true); text(money(absenceTotals.dayDiscount+absenceTotals.dsrDiscount),56,y-78,9,C.red,true);
  text('SALARIO LIQUIDO',623,y-24,7,C.muted,true); text(moneyText($('netPay').textContent),623,y-44,10,C.red,true);
  text('As horas adicionais sao apresentadas separadamente da simulacao salarial. Valores estimados; confira o holerite e as regras aplicaveis.',42,y-84,7,C.muted,false);
  footer(pageNo,0);pages.push(cmds.join('\n'));
