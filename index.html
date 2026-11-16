@@ -340,7 +340,7 @@ footer{color:#969da8}
   </div>
   <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Gerar relatório PDF profissional</button></div>
   <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Valor das adicionais</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
-  <p class="note" id="storageNote">Os dados e configurações são salvos neste navegador e perfil. Perfis não têm senha nem sincronização pela internet. Use Backup JSON para transferir seus dados entre aparelhos; não compartilhe seu backup.</p>
+  <p class="note" id="storageNote">Com login, os dados são sincronizados com sua conta na nuvem. Sem login, permanecem neste aparelho. Use Backup JSON como cópia de segurança.</p>
  </section>
  <section class="card" style="margin-top:16px" id="salaryCalc">
   <h2>05 · Simulador de salário líquido</h2>
@@ -383,7 +383,7 @@ try{if(window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_UR
 function authMessage(t,bad=false){$('authStatus').textContent=t;$('authStatus').style.color=bad?'#ff829b':'#8fa6c1'}
 function pixMessage(t,bad=false){$('pixStatus').textContent=t;$('pixStatus').style.color=bad?'#ff829b':'#8fa6c1'}
 function gateMessage(t,bad=false){const el=$('gateStatus');if(el){el.textContent=t;el.style.color=bad?'#ff829b':'#aeb8c5'}}
-function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){authMessage('Conectado como '+authUser.email+'. Sincronização ativada.');gateMessage('Acesso autorizado.');} }
+function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){authMessage('Conta conectada. Verificando sincronização...');gateMessage('Acesso autorizado.');} }
 function crc16(str){let crc=0xFFFF;for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
 function tlv(id,value){const v=String(value);return id+String(v.length).padStart(2,'0')+v}
 function makePixPayload(amount){
@@ -397,13 +397,49 @@ $('pixAmount').addEventListener('change',()=>{$('pixCustomWrap').hidden=$('pixAm
 $('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}if(!window.QRCode){pixMessage('Gerador de QR indisponível. Você ainda pode copiar a chave Pix.',true);return}const payload=makePixPayload(amount);await QRCode.toCanvas($('pixQr'),payload,{width:220,margin:1,errorCorrectionLevel:'M'});$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
 $('pixCopyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(PIX_KEY);pixMessage('Chave Pix copiada.');}catch(e){pixMessage('Não foi possível copiar automaticamente. Chave: '+PIX_KEY,true)}});
 $('pixCopyPayloadBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('pixCopyPayloadBtn').dataset.payload||'');pixMessage('Código Pix copiado.');}catch(e){pixMessage('Não foi possível copiar o código.',true)}});
-async function cloudSaveSettings(){if(!sb||!authUser||cloudBusy)return;try{const raw=JSON.parse(localStorage.getItem(settingsKey())||'{}');const row={user_id:authUser.id,salary:Number(raw.salary)||0,weekday_hours:Number(raw.daily)||8,saturday_hours:4,sunday_hours:0,hourly_rate:(Number(raw.salary)||0)/(Number(raw.divisor)||220),settings_data:raw,updated_at:new Date().toISOString()};const {error}=await sb.from('user_settings').upsert(row,{onConflict:'user_id'});if(error)throw error;}catch(e){authMessage('Falha ao sincronizar configurações: '+(e.message||e),true);throw e}}
-async function cloudSaveEntries(force=false){if(!sb||!authUser||(cloudBusy&&!force))return;try{const rows=entries.map(e=>{const c=calc(e);return{user_id:authUser.id,entry_id:String(e.id),work_date:e.date,day_type:e.dayType,start_time:e.start||null,end_time:e.end||null,break_minutes:c.br||0,worked_minutes:c.worked||0,normal_minutes:Math.max(0,(c.worked||0)-(c.extra||0)*60),additional_minutes:Math.round((c.extra||0)*60),notes:e.obs||'',entry_data:e,updated_at:new Date().toISOString()}});if(rows.length){const {data:written,error}=await sb.from('work_entries').upsert(rows,{onConflict:'user_id,entry_id'}).select('entry_id');if(error)throw error;if(!written||written.length!==rows.length)throw new Error('A nuvem confirmou '+(written?.length||0)+' de '+rows.length+' lançamentos. Verifique as permissões RLS e a chave única user_id + entry_id.');}
- const keepIds=rows.map(r=>r.entry_id);const {data:existing,error:readErr}=await sb.from('work_entries').select('entry_id').eq('user_id',authUser.id);if(readErr)throw readErr;const stale=(existing||[]).map(r=>r.entry_id).filter(id=>!keepIds.includes(id));if(stale.length){const {error:deleteErr}=await sb.from('work_entries').delete().eq('user_id',authUser.id).in('entry_id',stale);if(deleteErr)throw deleteErr;}}catch(e){authMessage('Falha ao sincronizar jornadas: '+(e.message||e),true);throw e}}
+async function cloudSaveSettings(){
+ if(!sb||!authUser||cloudBusy)return;
+ try{
+  const raw=JSON.parse(localStorage.getItem(settingsKey())||'{}');
+  const salary=Math.max(0,Number(raw.salary)||0);
+  const divisor=Math.max(1,Number(raw.divisor)||220);
+  const row={user_id:authUser.id,salary,weekday_hours:Number(raw.daily)||8,saturday_hours:4,sunday_hours:0,hourly_rate:Number((salary/divisor).toFixed(4)),settings_data:raw,updated_at:new Date().toISOString()};
+  const {error}=await sb.from('user_settings').upsert(row,{onConflict:'user_id'});
+  if(error)throw error;
+ }catch(e){authMessage('Falha ao sincronizar configurações: '+(e.message||e),true);throw e}
+}
+function dayTypeToDatabase(type){
+ return ({work:'trabalho',off:'folga',absence_justified:'falta_justificada',absence_unjustified:'falta_nao_justificada'})[type]||'trabalho';
+}
+function dayTypeFromDatabase(type){
+ return ({trabalho:'work',folga:'off',falta_justificada:'absence_justified',falta_nao_justificada:'absence_unjustified'})[type]||type||'work';
+}
+async function cloudSaveEntries(force=false){
+ if(!sb||!authUser||(cloudBusy&&!force))return;
+ try{
+  const rows=entries.map(e=>{
+   const c=calc(e);
+   const worked=Math.max(0,Math.round(Number(c.worked)||0));
+   const additional=Math.max(0,Math.round((Number(c.extra)||0)*60));
+   const normal=Math.max(0,worked-additional);
+   return {user_id:authUser.id,entry_id:String(e.id),work_date:e.date,day_type:dayTypeToDatabase(e.dayType),start_time:e.start||null,end_time:e.end||null,break_minutes:Math.max(0,Math.round(Number(c.br)||0)),worked_minutes:worked,normal_minutes:normal,additional_minutes:additional,notes:e.obs||'',entry_data:e,updated_at:new Date().toISOString()};
+  });
+  if(rows.length){
+   const {data:written,error}=await sb.from('work_entries').upsert(rows,{onConflict:'user_id,entry_id'}).select('entry_id');
+   if(error)throw error;
+   if(!written||written.length!==rows.length)throw new Error('A nuvem confirmou '+(written?.length||0)+' de '+rows.length+' lançamentos. Verifique as permissões RLS.');
+  }
+  const keepIds=rows.map(r=>r.entry_id);
+  const {data:existing,error:readErr}=await sb.from('work_entries').select('entry_id').eq('user_id',authUser.id);
+  if(readErr)throw readErr;
+  const stale=(existing||[]).map(r=>r.entry_id).filter(id=>!keepIds.includes(id));
+  if(stale.length){const {error:deleteErr}=await sb.from('work_entries').delete().eq('user_id',authUser.id).in('entry_id',stale);if(deleteErr)throw deleteErr;}
+ }catch(e){authMessage('Falha ao sincronizar jornadas: '+(e.message||e),true);throw e}
+}
 async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
  const [{data:cloudEntries,error:entriesErr},{data:settingsRows,error:settingsErr}]=await Promise.all([sb.from('work_entries').select('*').eq('user_id',authUser.id),sb.from('user_settings').select('*').eq('user_id',authUser.id).limit(1)]);
  if(entriesErr)throw entriesErr;if(settingsErr)throw settingsErr;
- const remote=(cloudEntries||[]).map(r=>r.entry_data||{id:r.id,date:r.work_date,dayType:r.day_type||'work',start:r.start_time||'09:00',end:r.end_time||'18:00',hasBreak:false,obs:r.notes||''});
+ const remote=(cloudEntries||[]).map(r=>r.entry_data||{id:r.entry_id||r.id,date:r.work_date,dayType:dayTypeFromDatabase(r.day_type),start:r.start_time||'',end:r.end_time||'',hasBreak:false,obs:r.notes||''});
  const localRaw=localStorage.getItem(dataKey());const local=JSON.parse(localRaw||'[]');
  if(remote.length){if(Array.isArray(local)&&local.length&&confirm('Há '+local.length+' jornadas locais e '+remote.length+' na nuvem. Deseja mesclar os registros deste aparelho com os da conta? Os registros da nuvem prevalecem em datas repetidas.')){const merged=new Map(remote.map(e=>[e.date,e]));for(const e of local)if(!merged.has(e.date))merged.set(e.date,e);entries=[...merged.values()].sort((a,b)=>a.date.localeCompare(b.date));await cloudSaveEntries(true);}else entries=remote;localStorage.setItem(dataKey(),JSON.stringify(entries));}
  else if(Array.isArray(local)&&local.length){if(confirm('Sua conta ainda não tem jornadas. Enviar para a nuvem os '+local.length+' lançamentos deste aparelho?')){entries=local;await cloudSaveEntries(true);}}
@@ -461,7 +497,7 @@ function settingsKey(){return 'horas-extras-pro-v2-settings-'+profileToken(activ
 function safeFileName(name){return String(name||'funcionario').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'funcionario';}
 function updateProfileLabel(){
   $('profileName').value=activeProfileName;
-  $('profileStatus').textContent='Perfil ativo: '+activeProfileName+'. Os dados deste perfil ficam separados dos demais neste aparelho. Não são enviados para um servidor.';
+  $('profileStatus').textContent='Perfil ativo: '+activeProfileName+'. Os registros são vinculados à sua conta quando a sincronização está ativada.';
   document.title='Horas Extras Pro — '+activeProfileName;
 }
 function saveSettings(){
