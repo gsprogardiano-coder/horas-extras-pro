@@ -712,53 +712,102 @@ function pdfAscii(value){
 function pdfEscape(value){return pdfAscii(value).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')}
 function makeLocalPDF(){
  const month=$('month').value||'Fechamento mensal',list=monthEntries();
- const pages=[];let lines=[];
- const add=(text,size=9,bold=false)=>lines.push({text:pdfAscii(text),size,bold});
- add('HORAS EXTRAS PRO - GARDY',17,true);
- add('Funcionario: '+activeProfileName,11,true);
- add('Relatorio mensal - '+month,10);
- add('Dias registrados: '+$('days').textContent+' | Folgas: '+$('offDays').textContent+' | Horas trabalhadas: '+$('worked').textContent);
- add('Horas extras: '+$('overtime').textContent+' | Horas noturnas: '+$('night').textContent);
- add('Valor das horas adicionais (sem multiplicador): '+$('extraValue').textContent);
- add(' ');
- add('LANCAMENTOS',12,true);
- add('Data       Tipo       Entrada  Saida   Intervalo       Trabalhadas  Extras  Noturnas  Valor',8,true);
- list.forEach(e=>{
+ const W=842,H=595, pages=[]; let cmds=[];
+ const C={navy:[0.035,0.055,0.09],navy2:[0.075,0.10,0.16],red:[0.91,0.10,0.20],redSoft:[1,0.93,0.94],ink:[0.12,0.15,0.20],muted:[0.39,0.44,0.52],line:[0.87,0.89,0.92],light:[0.965,0.97,0.98],white:[1,1,1]};
+ const rgb=c=>c.map(v=>v.toFixed(3)).join(' ');
+ const rect=(x,y,w,h,color)=>cmds.push(`${rgb(color)} rg ${x} ${y} ${w} ${h} re f`);
+ const stroke=(x1,y1,x2,y2,color=C.line,width=0.7)=>cmds.push(`${rgb(color)} RG ${width} w ${x1} ${y1} m ${x2} ${y2} l S`);
+ 
+ const text=(s,x,y,size=9,color=C.ink,bold=false)=>{
+  const val=pdfEscape(s);
+  cmds.push(`BT /${bold?'F2':'F1'} ${size} Tf ${rgb(color)} rg 1 0 0 1 ${x} ${y} Tm (${val}) Tj ET`);
+ };
+ const moneyText=s=>String(s||'R$ 0,00');
+ const title=(subtitle)=>{
+  rect(0,0,W,H,C.white); rect(0,H-104,W,104,C.navy);
+  rect(0,H-104,7,104,C.red); rect(42,H-28,34,3,C.red);
+  text('GARDY HORAS PRO',42,H-53,19,C.white,true);
+  text('RELATORIO DE JORNADA E HORAS ADICIONAIS',42,H-73,8,[0.78,0.82,0.88],true);
+  text('FECHAMENTO MENSAL',650,H-48,8,[0.78,0.82,0.88],true);
+  text(month,650,H-68,13,C.white,true);
+  text('Funcionario: '+activeProfileName,42,H-129,10,C.ink,true);
+  text(subtitle,42,H-145,8,C.muted,false);
+ };
+ const footer=(n,total)=>{
+  stroke(42,34,W-42,34,C.line,0.6);
+  text('Gardy Horas Pro  |  Relatorio gerado pelo aplicativo',42,20,7,C.muted,false);
+  text('Pagina '+n,W-75,20,7,C.muted,false);
+ };
+ const card=(x,y,w,label,value)=>{
+  rect(x,y,w,54,C.light); rect(x,y,3,54,C.red);
+  text(label.toUpperCase(),x+12,y+37,7,C.muted,true);
+  text(value,x+12,y+15,15,C.red,true);
+ };
+ const tableHead=(y)=>{
+  rect(42,y-7,758,23,C.navy2);
+  const xs=[52,112,192,345,438,523,608,710];
+  const labels=['DATA','TIPO','HORARIO','TRABALHADAS','ADICIONAIS','NOTURNAS','VALOR ADIC.',''];
+  labels.forEach((v,i)=>text(v,xs[i],y+1,7,C.white,true));
+ };
+ const startPage=(pageNo)=>{
+  cmds=[]; title(pageNo===1?'Resumo do periodo e detalhamento dos lancamentos':'Continuação dos lancamentos');
+  if(pageNo===1){
+   card(42,375,177,'DIAS REGISTRADOS',$('days').textContent||'0');
+   card(232,375,177,'HORAS TRABALHADAS',$('worked').textContent||'0h');
+   card(422,375,177,'HORAS ADICIONAIS',$('overtime').textContent||'0h');
+   card(612,375,188,'VALOR ADICIONAL',moneyText($('extraValue').textContent));
+   text('LANÇAMENTOS DO PERIODO',42,347,10,C.ink,true);
+   tableHead(322); return 300;
+  }
+  text('LANÇAMENTOS DO PERIODO — CONTINUAÇÃO',42,347,10,C.ink,true);
+  tableHead(322); return 300;
+ };
+ let pageNo=1, y=startPage(pageNo);
+ const addPage=()=>{footer(pageNo,0);pages.push(cmds.join('\n'));pageNo++;y=startPage(pageNo);};
+ list.forEach((e,idx)=>{
+  if(y<66){addPage();}
   const c=calc(e),off=e.dayType==='off';
-  add(`${e.date.split('-').reverse().join('/')}  ${(off?'Folga':'Trabalho').padEnd(9)} ${(off?'--':e.start).padEnd(7)} ${(off?'--':e.end).padEnd(7)} ${(off?'--':e.hasBreak?e.breakStart+'-'+e.breakEnd:'--').padEnd(14)} ${fmtHours(c.worked).padEnd(11)} ${fmtHours(Math.round(c.extra*60)).padEnd(11)} ${fmtHours(c.night).padEnd(8)} ${money(c.total)}`,7);
+  const date=e.date.split('-').reverse().join('/');
+  const type=off?'FOLGA':'TRABALHO';
+  const schedule=off?'—':`${e.start} - ${e.end}${e.hasBreak?' / '+e.breakStart+'-'+e.breakEnd:''}`;
+  const vals=[date,type,schedule,fmtHours(c.worked),fmtHours(Math.round(c.extra*60)),fmtHours(c.night),money(c.total)];
+  if(idx%2===1)rect(42,y-8,758,25,[0.975,0.978,0.982]);
+  const xx=[52,112,192,345,438,523,608];
+  vals.forEach((v,i)=>text(String(v),xx[i],y, i===2?7:8, i===4?C.red:C.ink, i===4||i===6));
+  stroke(42,y-10,800,y-10,C.line,0.45); y-=25;
  });
- add(' ');
- add('SIMULADOR DE SALARIO LIQUIDO - SOMENTE FOLHA',12,true);
- add('Salario bruto: '+$('grossPay').textContent+' | INSS: '+$('inssPay').textContent+' | IRRF: '+$('irrfPay').textContent);
- add('Outros descontos: '+$('otherPay').textContent+' | Total descontos: '+$('deductionsPay').textContent);
- add('Salario liquido estimado: '+$('netPay').textContent,11,true);
- add('Valores estimados. Confira o holerite e as regras aplicaveis.',8);
- const maxLines=43;
- for(let i=0;i<lines.length;i+=maxLines)pages.push(lines.slice(i,i+maxLines));
- if(!pages.length)pages.push([]);
- const objs=[];
- const addObj=(str)=>{objs.push(str);return objs.length};
- const catalogId=addObj('<< /Type /Catalog /Pages 2 0 R >>');
- const pagesId=addObj('');
- const fontRegular=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
- const fontBold=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+ if(y<135){addPage();}
+ // Fechamento financeiro e observações sempre no final.
+ rect(42,y-100,758,88,C.light); rect(42,y-100,4,88,C.red);
+ text('RESUMO FINANCEIRO',56,y-31,9,C.ink,true);
+ text('Horas adicionais: '+($('overtime').textContent||'0h'),56,y-51,8,C.muted,false);
+ text('Valor das horas adicionais: '+moneyText($('extraValue').textContent),56,y-70,10,C.red,true);
+ text('DSR estimado sobre adicionais: '+moneyText($('dsrValue').textContent),340,y-51,8,C.muted,false);
+ text('Horas noturnas: '+($('night').textContent||'0h'),340,y-70,8,C.muted,false);
+ text('SIMULACAO DA FOLHA (ESTIMATIVA)',56,y-91,7,C.muted,true);
+ y-=122;
+ if(y<100){addPage();y-=10;}
+ rect(42,y-67,758,62,[0.99,0.99,0.99]);
+ text('SALARIO BRUTO',56,y-24,7,C.muted,true); text(moneyText($('grossPay').textContent),56,y-44,10,C.ink,true);
+ text('INSS ESTIMADO',245,y-24,7,C.muted,true); text(moneyText($('inssPay').textContent),245,y-44,10,C.ink,true);
+ text('IRRF ESTIMADO',434,y-24,7,C.muted,true); text(moneyText($('irrfPay').textContent),434,y-44,10,C.ink,true);
+ text('SALARIO LIQUIDO',623,y-24,7,C.muted,true); text(moneyText($('netPay').textContent),623,y-44,10,C.red,true);
+ text('As horas adicionais sao apresentadas separadamente da simulacao salarial. Valores estimados; confira o holerite e as regras aplicaveis.',42,y-84,7,C.muted,false);
+ footer(pageNo,0);pages.push(cmds.join('\n'));
+ const total=pages.length,objs=[]; const addObj=s=>{objs.push(s);return objs.length;};
+ const catalogId=addObj('<< /Type /Catalog /Pages 2 0 R >>'),pagesId=addObj('');
+ const f1=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'),f2=addObj('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
  const pageIds=[];
- pages.forEach((pg,idx)=>{
-  let y=560,commands=[];
-  pg.forEach((ln)=>{
-   commands.push(`BT /${ln.bold?'F2':'F1'} ${ln.size} Tf 42 ${y} Td (${pdfEscape(ln.text)}) Tj ET`);
-   y-=Math.max(12,ln.size+4);
-  });
-  const stream=commands.join('\n');
+ pages.forEach((streamText,i)=>{
+  const stream=streamText+'\n'+`% footer page ${i+1}`;
   const contentId=addObj(`<< /Length ${new TextEncoder().encode(stream).length} >>\nstream\n${stream}\nendstream`);
-  const pageId=addObj(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 ${fontRegular} 0 R /F2 ${fontBold} 0 R >> >> /Contents ${contentId} 0 R >>`);
+  const pageId=addObj(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${contentId} 0 R >>`);
   pageIds.push(pageId);
  });
  objs[pagesId-1]=`<< /Type /Pages /Kids [${pageIds.map(id=>id+' 0 R').join(' ')}] /Count ${pageIds.length} >>`;
  let pdf='%PDF-1.4\n',offsets=[0];
  objs.forEach((obj,i)=>{offsets.push(new TextEncoder().encode(pdf).length);pdf+=`${i+1} 0 obj\n${obj}\nendobj\n`;});
- const xref=new TextEncoder().encode(pdf).length;
- pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
+ const xref=new TextEncoder().encode(pdf).length; pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`;
  offsets.slice(1).forEach(off=>pdf+=String(off).padStart(10,'0')+' 00000 n \n');
  pdf+=`trailer\n<< /Size ${objs.length+1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
  return new Blob([pdf],{type:'application/pdf'});
