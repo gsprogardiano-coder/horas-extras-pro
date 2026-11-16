@@ -737,7 +737,13 @@ $('restore').onchange=async ev=>{
 
 
 function pdfAscii(value){
- return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,'?');
+ return String(value??'')
+  .replace(/[\u00A0\u202F\u2007]/g,' ')
+  .replace(/[\u2010-\u2015\u2212]/g,'-')
+  .replace(/[·•]/g,'-')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'')
+  .replace(/[^\x20-\x7E]/g,'');
 }
 function pdfEscape(value){return pdfAscii(value).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')}
 function makeLocalPDF(){
