@@ -89,14 +89,14 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
    <div class="fields">
     <div class="field"><label for="salary">Salário mensal (R$)</label><input id="salary" type="number" min="0" step=".01" value=""></div>
     <div class="field"><label for="divisor">Divisor mensal</label><select id="divisor"><option>220</option><option>200</option><option>180</option></select></div>
-    <div class="field"><label for="daily">Jornada normal diária</label><input id="daily" type="number" min="1" max="24" step=".25" value="8"></div>
+    <div class="field"><label for="daily">Jornada normal de segunda a sexta</label><input id="daily" type="number" min="1" max="24" step=".25" value="8"></div>
     <div class="field" style="display:none"><label for="extraRate">Adicional sobre hora extra (%)</label><input id="extraRate" type="number" min="0" max="300" value="0" readonly></div>
     <div class="field" style="display:none"><label for="nightRate">Adicional noturno (%)</label><input id="nightRate" type="number" min="0" max="100" value="0" readonly></div>
     <div class="field"><label for="month">Mês de referência</label><input id="month" type="month"></div>
     <div class="field"><label for="dsrWorkdays">Dias úteis para DSR</label><input id="dsrWorkdays" type="number" min="1" max="31" value="26"></div>
     <div class="field"><label for="dsrRestdays">Repousos + feriados no mês</label><input id="dsrRestdays" type="number" min="0" max="31" value="4"></div>
    </div>
-   <p class="note">Configure seu salário, divisor e jornada normal de segunda a sexta. Aos sábados, o aplicativo considera 4 horas normais; aos domingos, todas as horas trabalhadas são adicionais.</p>
+   <p class="note">Este campo vale SOMENTE de segunda a sexta. Deixe 8 horas se essa é sua jornada nesses dias. Sábado é fixo em 4 horas normais (o excedente é adicional) e domingo é fixo em 0 horas normais (todas as horas são adicionais). Não altere este campo para configurar o sábado.</p>
   </section>
   <section class="card">
    <h2>02 · Registrar jornada</h2>
