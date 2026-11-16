@@ -61,6 +61,8 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./logo-gardy.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -72,16 +74,37 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
 <header>
   <div class="brand"><img class="logo-img" src="./logo-gardy.png" alt="Logo Gardy VJ"><div>HORAS EXTRAS PRO</div><span class="pill">PESSOAL</span></div>
   <div class="sub">Controle de jornada variável · jornada urbana · pagamento de horas extras</div>
-  <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo</div></div></div>
+  <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
 </header>
 <main>
+ <section class="card" style="margin-bottom:16px" id="accountCard">
+  <h2>Conta e sincronização na nuvem</h2>
+  <p class="note" style="margin-top:-8px">Crie sua conta gratuita para acessar seus registros em outros aparelhos. Seus dados ficam privados na sua conta.</p>
+  <div class="fields">
+   <div class="field"><label for="authEmail">E-mail</label><input id="authEmail" type="email" autocomplete="email" placeholder="seu@email.com"></div>
+   <div class="field"><label for="authPassword">Senha (mínimo 6 caracteres)</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Sua senha"></div>
+  </div>
+  <div class="actions"><button id="signUpBtn" type="button">Criar conta grátis</button><button id="signInBtn" type="button" class="secondary">Entrar</button><button id="signOutBtn" type="button" class="secondary" hidden>Sair</button></div>
+  <p class="note" id="authStatus" role="status">Sem login: seus dados continuam salvos somente neste aparelho.</p>
+ </section>
+ <section class="card" style="margin-bottom:16px" id="donationCard">
+  <h2>Apoie o Gardy Horas Pro</h2>
+  <p class="note" style="margin-top:-8px">O aplicativo é gratuito. A contribuição é espontânea e não libera nem bloqueia nenhuma função.</p>
+  <div class="fields">
+   <div class="field"><label for="pixAmount">Valor da contribuição (R$)</label><select id="pixAmount"><option value="5.00">R$ 5,00</option><option value="10.00" selected>R$ 10,00</option><option value="20.00">R$ 20,00</option><option value="0">Outro valor (digitar)</option></select></div>
+   <div class="field" id="pixCustomWrap" hidden><label for="pixCustom">Outro valor (R$)</label><input id="pixCustom" type="number" min="1" step="0.01" placeholder="Ex.: 15,00"></div>
+  </div>
+  <div class="actions"><button type="button" id="pixGenerateBtn">Gerar QR Code Pix</button><button type="button" class="secondary" id="pixCopyBtn">Copiar chave Pix</button></div>
+  <div id="pixQrWrap" style="display:none;text-align:center;margin-top:14px"><canvas id="pixQr" style="max-width:230px;width:100%;background:#fff;padding:10px;border-radius:12px"></canvas><p class="note">Confira o nome e os dados do recebedor no aplicativo do seu banco antes de confirmar.</p><button type="button" class="secondary" id="pixCopyPayloadBtn">Copiar código Pix</button></div>
+  <p class="note" id="pixStatus" role="status"></p>
+ </section>
  <section class="card" style="margin-bottom:16px" id="profileCard">
   <h2>Perfil do funcionário</h2>
   <div class="fields">
     <div class="field"><label for="profileName">Nome do funcionário</label><input id="profileName" type="text" maxlength="60" placeholder="Digite seu nome"></div>
     <div class="field" style="justify-content:end"><button id="switchProfile" type="button">Abrir meu perfil</button></div>
   </div>
-  <p class="note" id="profileStatus">Cada perfil mantém salário, configurações e lançamentos separados neste aparelho. Não há conta, senha ou sincronização pela internet.</p>
+  <p class="note" id="profileStatus">O perfil identifica o funcionário. Com login, os dados também são sincronizados na sua conta; sem login, permanecem neste aparelho.</p>
 </section>
 <div class="grid">
   <section class="card">
@@ -162,9 +185,51 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
   <p class="note">O valor das horas adicionais é exibido separadamente do salário e não é somado à simulação da folha. O cálculo segue a forma de pagamento informada pelo usuário, sem multiplicadores de 50% ou 100%. O DSR aparece apenas como referência separada e não é somado ao valor principal. Outros reflexos legais não estão incluídos.</p>
  </section>
 </main>
-<footer>Horas Extras Pro · Protótipo web local · Não substitui espelho de ponto oficial nem orientação trabalhista.</footer>
+<footer>Horas Extras Pro · Gardy · Gratuito · Não substitui espelho de ponto oficial nem orientação trabalhista.</footer>
 <script>
 const $=id=>document.getElementById(id);
+// Chave publishable do Supabase: pode ficar no frontend; nunca inserir service_role/secret aqui.
+const SUPABASE_URL='https://yaiyvtebeltcjjdstipg.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_J5JR_I8BMkS37ZOUJ5cN_g_OU-V5AtV';
+const PIX_KEY='33246258821';
+const PIX_RECEIVER='JOSE ROBERTO GARDIANO';
+const PIX_CITY='SAO PAULO';
+let sb=null, authUser=null, cloudBusy=false, authReady=false;
+try{if(window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(e){console.error('Supabase indisponível',e)}
+function authMessage(t,bad=false){$('authStatus').textContent=t;$('authStatus').style.color=bad?'#ff829b':'#8fa6c1'}
+function pixMessage(t,bad=false){$('pixStatus').textContent=t;$('pixStatus').style.color=bad?'#ff829b':'#8fa6c1'}
+function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; if(authUser)authMessage('Conectado como '+authUser.email+'. Sincronização ativada.'); }
+function crc16(str){let crc=0xFFFF;for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
+function tlv(id,value){const v=String(value);return id+String(v.length).padStart(2,'0')+v}
+function makePixPayload(amount){
+ const mai=tlv('00','br.gov.bcb.pix')+tlv('01',PIX_KEY);
+ let payload=tlv('00','01')+tlv('26',mai)+tlv('52','0000')+tlv('53','986');
+ if(amount!==null)payload+=tlv('54',Number(amount).toFixed(2));
+ payload+=tlv('58','BR')+tlv('59',PIX_RECEIVER)+tlv('60',PIX_CITY)+tlv('62',tlv('05','***'))+'6304';
+ return payload+crc16(payload);
+}
+$('pixAmount').addEventListener('change',()=>{$('pixCustomWrap').hidden=$('pixAmount').value!=='0';$('pixQrWrap').style.display='none';});
+$('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}if(!window.QRCode){pixMessage('Gerador de QR indisponível. Você ainda pode copiar a chave Pix.',true);return}const payload=makePixPayload(amount);await QRCode.toCanvas($('pixQr'),payload,{width:220,margin:1,errorCorrectionLevel:'M'});$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
+$('pixCopyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(PIX_KEY);pixMessage('Chave Pix copiada.');}catch(e){pixMessage('Não foi possível copiar automaticamente. Chave: '+PIX_KEY,true)}});
+$('pixCopyPayloadBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('pixCopyPayloadBtn').dataset.payload||'');pixMessage('Código Pix copiado.');}catch(e){pixMessage('Não foi possível copiar o código.',true)}});
+async function cloudSaveSettings(){if(!sb||!authUser||cloudBusy)return;try{const raw=JSON.parse(localStorage.getItem(settingsKey())||'{}');const row={user_id:authUser.id,salary:Number(raw.salary)||0,weekday_hours:Number(raw.daily)||8,saturday_hours:4,sunday_hours:0,hourly_rate:(Number(raw.salary)||0)/(Number(raw.divisor)||220),settings_data:raw,updated_at:new Date().toISOString()};const {error}=await sb.from('user_settings').upsert(row,{onConflict:'user_id'});if(error)throw error;}catch(e){authMessage('Falha ao sincronizar configurações: '+(e.message||e),true)}}
+async function cloudSaveEntries(){if(!sb||!authUser||cloudBusy)return;try{const rows=entries.map(e=>{const c=calc(e);return{user_id:authUser.id,entry_id:String(e.id),work_date:e.date,day_type:e.dayType,start_time:e.start||null,end_time:e.end||null,break_minutes:c.br||0,worked_minutes:c.worked||0,normal_minutes:Math.max(0,(c.worked||0)-(c.extra||0)*60),additional_minutes:Math.round((c.extra||0)*60),notes:e.obs||'',entry_data:e,updated_at:new Date().toISOString()}});if(rows.length){const {error}=await sb.from('work_entries').upsert(rows,{onConflict:'user_id,entry_id'});if(error)throw error;}
+ const keepIds=rows.map(r=>r.entry_id);const {data:existing,error:readErr}=await sb.from('work_entries').select('entry_id').eq('user_id',authUser.id);if(readErr)throw readErr;const stale=(existing||[]).map(r=>r.entry_id).filter(id=>!keepIds.includes(id));if(stale.length){const {error:deleteErr}=await sb.from('work_entries').delete().eq('user_id',authUser.id).in('entry_id',stale);if(deleteErr)throw deleteErr;}}catch(e){authMessage('Falha ao sincronizar jornadas: '+(e.message||e),true)}}
+async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
+ const [{data:cloudEntries,error:entriesErr},{data:settingsRows,error:settingsErr}]=await Promise.all([sb.from('work_entries').select('*').eq('user_id',authUser.id),sb.from('user_settings').select('*').eq('user_id',authUser.id).limit(1)]);
+ if(entriesErr)throw entriesErr;if(settingsErr)throw settingsErr;
+ const remote=(cloudEntries||[]).map(r=>r.entry_data||{id:r.id,date:r.work_date,dayType:r.day_type||'work',start:r.start_time||'09:00',end:r.end_time||'18:00',hasBreak:false,obs:r.notes||''});
+ const localRaw=localStorage.getItem(dataKey());const local=JSON.parse(localRaw||'[]');
+ if(remote.length){if(Array.isArray(local)&&local.length&&confirm('Há '+local.length+' jornadas locais e '+remote.length+' na nuvem. Deseja mesclar os registros deste aparelho com os da conta? Os registros da nuvem prevalecem em datas repetidas.')){const merged=new Map(remote.map(e=>[e.date,e]));for(const e of local)if(!merged.has(e.date))merged.set(e.date,e);entries=[...merged.values()].sort((a,b)=>a.date.localeCompare(b.date));await cloudSaveEntries();}else entries=remote;localStorage.setItem(dataKey(),JSON.stringify(entries));}
+ else if(Array.isArray(local)&&local.length){if(confirm('Sua conta ainda não tem jornadas. Enviar para a nuvem os '+local.length+' lançamentos deste aparelho?')){entries=local;await cloudSaveEntries();}}
+ const sr=settingsRows?.[0];if(sr){const saved=sr.settings_data||{};if(sr.salary!==undefined)saved.salary=String(sr.salary);if(sr.weekday_hours!==undefined)saved.daily=String(sr.weekday_hours);Object.entries(saved).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v});saveSettings();}
+ localStorage.setItem(PROFILE_NAME_KEY,authUser.user_metadata?.full_name||authUser.email||activeProfileName);activeProfileName=localStorage.getItem(PROFILE_NAME_KEY);$('profileName').value=activeProfileName;updateProfileLabel();load();authMessage('Conta conectada. Sincronização concluída.');
+ }catch(e){authMessage('Não foi possível sincronizar: '+(e.message||e)+'. Confira as tabelas e políticas RLS no Supabase.',true)}finally{cloudBusy=false}}
+async function initAuth(){if(!sb){authMessage('Não foi possível carregar o serviço de login. Verifique sua conexão.',true);return}try{const {data,error}=await sb.auth.getSession();if(error)throw error;authUser=data.session?.user||null;setAuthUI();if(authUser)await syncCloud();authReady=true;sb.auth.onAuthStateChange((event,session)=>{authUser=session?.user||null;setAuthUI();if(event==='SIGNED_IN'&&authUser)setTimeout(()=>syncCloud(),0)});}catch(e){authMessage('Erro ao iniciar login: '+(e.message||e),true)}}
+$('signUpBtn').addEventListener('click',async()=>{if(!sb){authMessage('Serviço de login não carregou. Atualize a página e tente novamente.',true);return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||password.length<6){authMessage('Informe um e-mail válido e senha com pelo menos 6 caracteres.',true);return}try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'} });if(error)throw error;if(data.session){authUser=data.user;setAuthUI();await syncCloud()}else authMessage('Cadastro iniciado. Confirme seu e-mail e depois entre no aplicativo.');}catch(e){authMessage('Não foi possível criar a conta: '+(e.message||e),true)}});
+$('signInBtn').addEventListener('click',async()=>{if(!sb){authMessage('Serviço de login não carregou. Atualize a página e tente novamente.',true);return}const email=$('authEmail').value.trim(),password=$('authPassword').value;if(!email||!password){authMessage('Informe e-mail e senha.',true);return}try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;authUser=data.user;setAuthUI();await syncCloud()}catch(e){authMessage('Não foi possível entrar: '+(e.message||e),true)}});
+$('signOutBtn').addEventListener('click',async()=>{if(!sb)return;try{const {error}=await sb.auth.signOut();if(error)throw error;authUser=null;setAuthUI();authMessage('Você saiu. Seus dados locais permanecem neste aparelho.')}catch(e){authMessage('Erro ao sair: '+(e.message||e),true)}});
+
 const LEGACY_KEY='horas-extras-pro-v1';
 const LEGACY_SETTINGS_KEY='horas-extras-pro-settings-v1';
 const PROFILE_NAME_KEY='horas-extras-pro-active-profile-v2';
@@ -185,6 +250,7 @@ function saveSettings(){
     dsrWorkdays:$('dsrWorkdays').value,dsrRestdays:$('dsrRestdays').value,
     dependents:$('dependents').value,otherDiscounts:$('otherDiscounts').value};
   try{localStorage.setItem(settingsKey(),JSON.stringify(s));}catch(e){}
+  if(authUser)cloudSaveSettings();
 }
 function restoreSettings(){
   try{
@@ -235,6 +301,7 @@ function load(){
 function persist(){
   try {
     window.localStorage.setItem(dataKey(), JSON.stringify(entries));
+    if(authUser)cloudSaveEntries();
     storageAvailable = true;
     msg('Jornada adicionada e salva neste navegador.');
   } catch (err) {
@@ -516,6 +583,7 @@ updateProfileLabel();
 restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 // Carrega o perfil ativo; dados antigos são migrados quando o usuário confirma o nome.
 load();
+initAuth();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('PWA offline indisponível:', err)));
