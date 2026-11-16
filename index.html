@@ -626,11 +626,11 @@ function render(){
  $('rows').innerHTML='';
  if(!list.length)$('rows').innerHTML='<tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr>';
  list.forEach(e=>{let c=calc(e);worked+=c.worked;night+=c.night;extra+=c.extra;ev+=c.extraVal;nv+=c.nightVal;
- let isOff=e.dayType==='off';let tr=document.createElement('tr');tr.innerHTML=`<td>${e.date.split('-').reverse().join('/')}</td><td><strong>${isOff?'Folga':'Trabalho'}</strong></td><td>${isOff?'—':e.start}</td><td>${isOff?'—':e.end}</td><td>${isOff?'—':e.hasBreak?e.breakStart+'–'+e.breakEnd:'—'}</td><td>${fmtHours(c.worked)}</td><td>${c.extra.toFixed(2)}h</td><td>${fmtHours(c.night)}</td><td><strong>${money(c.total)}</strong></td><td class="no-print"><button class="secondary" data-edit="${e.id}">Editar</button> <button class="secondary" data-dup="${e.id}">Duplicar</button> <button class="danger" data-del="${e.id}">Excluir</button></td>`;$('rows').appendChild(tr)});
+ let isOff=e.dayType==='off';let tr=document.createElement('tr');tr.innerHTML=`<td>${e.date.split('-').reverse().join('/')}</td><td><strong>${isOff?'Folga':'Trabalho'}</strong></td><td>${isOff?'—':e.start}</td><td>${isOff?'—':e.end}</td><td>${isOff?'—':e.hasBreak?e.breakStart+'–'+e.breakEnd:'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round(c.extra*60))}</td><td>${fmtHours(c.night)}</td><td><strong>${money(c.total)}</strong></td><td class="no-print"><button class="secondary" data-edit="${e.id}">Editar</button> <button class="secondary" data-dup="${e.id}">Duplicar</button> <button class="danger" data-del="${e.id}">Excluir</button></td>`;$('rows').appendChild(tr)});
  const wd=Math.max(1,Number($('dsrWorkdays').value)||1),rd=Math.max(0,Number($('dsrRestdays').value)||0);
  const dsr=(ev+nv)/wd*rd;
  renderSalary(list,ev,nv,dsr);
- $('days').textContent=list.length;$('offDays').textContent=offDays;$('worked').textContent=fmtHours(worked);$('overtime').textContent=extra.toFixed(2)+'h';$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('dsrValue').textContent=money(dsr);$('heroTotal').textContent=money(ev);
+ $('days').textContent=list.length;$('offDays').textContent=offDays;$('worked').textContent=fmtHours(worked);$('overtime').textContent=fmtHours(Math.round(extra*60));$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('dsrValue').textContent=money(dsr);$('heroTotal').textContent=money(ev);
  renderCalendar(list);
 }
 function msg(t,bad=false){$('formMsg').textContent=t;$('formMsg').style.color=bad?'#bd4545':'#167a59'}
@@ -725,7 +725,7 @@ function makeLocalPDF(){
  add('Data       Tipo       Entrada  Saida   Intervalo       Trabalhadas  Extras  Noturnas  Valor',8,true);
  list.forEach(e=>{
   const c=calc(e),off=e.dayType==='off';
-  add(`${e.date.split('-').reverse().join('/')}  ${(off?'Folga':'Trabalho').padEnd(9)} ${(off?'--':e.start).padEnd(7)} ${(off?'--':e.end).padEnd(7)} ${(off?'--':e.hasBreak?e.breakStart+'-'+e.breakEnd:'--').padEnd(14)} ${fmtHours(c.worked).padEnd(11)} ${c.extra.toFixed(2)}h  ${fmtHours(c.night).padEnd(8)} ${money(c.total)}`,7);
+  add(`${e.date.split('-').reverse().join('/')}  ${(off?'Folga':'Trabalho').padEnd(9)} ${(off?'--':e.start).padEnd(7)} ${(off?'--':e.end).padEnd(7)} ${(off?'--':e.hasBreak?e.breakStart+'-'+e.breakEnd:'--').padEnd(14)} ${fmtHours(c.worked).padEnd(11)} ${fmtHours(Math.round(c.extra*60)).padEnd(11)} ${fmtHours(c.night).padEnd(8)} ${money(c.total)}`,7);
  });
  add(' ');
  add('SIMULADOR DE SALARIO LIQUIDO - SOMENTE FOLHA',12,true);
