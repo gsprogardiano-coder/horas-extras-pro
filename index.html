@@ -80,6 +80,10 @@ table{color:#dceaff}th{color:#8fa6c1}th,td{border-bottom:1px solid #263a54}
 .login-panel label{display:block;color:#b8c0ca;font-size:12px;font-weight:700;margin:12px 0 6px}
 .login-panel input{width:100%;height:53px;border-radius:14px;padding:0 16px;background:#090b10;border:1px solid #66707c;color:#fff;font-size:16px;box-shadow:inset 0 2px 9px #0009}
 .login-panel input:focus{outline:2px solid #ff263b88;border-color:#ff263b;box-shadow:0 0 14px #ff263b30}
+.password-wrap{position:relative;width:100%}
+.login-panel .password-wrap input{padding-right:58px}
+.password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:42px;height:42px;padding:0;border:0;border-radius:10px;background:transparent!important;box-shadow:none!important;color:#cbd2dc;font-size:20px;display:grid;place-items:center}
+.password-toggle:hover{background:#ffffff10!important;color:#fff}
 .gate-primary{width:100%;height:56px;margin-top:19px;border-radius:14px;background:linear-gradient(100deg,#ff263b,#b90018);border:1px solid #ff5967;color:white;font-size:17px;font-weight:900;letter-spacing:.08em;box-shadow:0 0 18px #ff1d2d77}
 .gate-primary span{font-size:24px;margin-left:10px;vertical-align:-2px}
 .gate-primary:disabled{opacity:.65}
@@ -261,15 +265,37 @@ footer{color:#969da8}
     </div>
     <div class="login-panel">
       <div class="login-heading"><span class="login-user-icon">◉</span><div><h1>Acesse sua conta</h1><p>Entre para acessar seus registros e cálculos.</p></div></div>
-      <label for="gateEmail">E-mail</label>
-      <input id="gateEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com">
-      <label for="gatePassword">Senha</label>
-      <input id="gatePassword" type="password" autocomplete="current-password" placeholder="Sua senha">
-      <button id="gateSignIn" class="gate-primary" type="button">ENTRAR <span>→</span></button>
-      <button id="gateReset" class="gate-link" type="button">Esqueci minha senha</button>
+      <div id="gateLoginView">
+        <label for="gateEmail">E-mail</label>
+        <input id="gateEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com">
+        <label for="gatePassword">Senha</label>
+        <div class="password-wrap">
+          <input id="gatePassword" type="password" autocomplete="current-password" placeholder="Sua senha">
+          <button class="password-toggle" type="button" data-toggle-password="gatePassword" aria-label="Mostrar senha" aria-pressed="false">◉</button>
+        </div>
+        <button id="gateSignIn" class="gate-primary" type="button">ENTRAR <span>→</span></button>
+        <button id="gateReset" class="gate-link" type="button">Esqueci minha senha</button>
+        <div class="login-separator"></div>
+        <div class="login-create">Ainda não tem conta? <button id="gateOpenSignUp" type="button">Criar conta grátis</button></div>
+      </div>
+      <div id="gateSignUpView" hidden>
+        <div class="login-heading"><span class="login-user-icon">✚</span><div><h1>Criar nova conta</h1><p>Cadastre seu e-mail e crie uma senha segura.</p></div></div>
+        <label for="gateSignupEmail">E-mail</label>
+        <input id="gateSignupEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com">
+        <label for="gateSignupPassword">Senha (mínimo 6 caracteres)</label>
+        <div class="password-wrap">
+          <input id="gateSignupPassword" type="password" autocomplete="new-password" placeholder="Crie sua senha">
+          <button class="password-toggle" type="button" data-toggle-password="gateSignupPassword" aria-label="Mostrar senha" aria-pressed="false">◉</button>
+        </div>
+        <label for="gateSignupConfirm">Confirmar senha</label>
+        <div class="password-wrap">
+          <input id="gateSignupConfirm" type="password" autocomplete="new-password" placeholder="Digite a senha novamente">
+          <button class="password-toggle" type="button" data-toggle-password="gateSignupConfirm" aria-label="Mostrar senha" aria-pressed="false">◉</button>
+        </div>
+        <button id="gateCreateAccount" class="gate-primary" type="button">CRIAR CONTA <span>→</span></button>
+        <button id="gateBackToLogin" class="gate-link" type="button">← Voltar para entrar</button>
+      </div>
       <p id="gateStatus" role="status" aria-live="polite">Entre com sua conta ou crie uma gratuitamente.</p>
-      <div class="login-separator"></div>
-      <div class="login-create">Ainda não tem conta? <button id="gateSignUp" type="button">Criar conta grátis</button></div>
     </div>
     <div class="login-benefits">
       <div><b>ϟ</b><span>Cálculos<br>precisos</span></div>
@@ -604,14 +630,43 @@ $('gateSignIn').addEventListener('click',async()=>{
  catch(e){gateMessage('Não foi possível entrar: '+(e.message||e),true);}
  finally{btn.disabled=false;btn.innerHTML='ENTRAR <span>→</span>';}
 });
-$('gateSignUp').addEventListener('click',async()=>{
+function showGateView(view){
+ const login=view==='login';
+ $('gateLoginView').hidden=!login;
+ $('gateSignUpView').hidden=login;
+ gateMessage(login?'Entre com sua conta ou crie uma gratuitamente.':'Preencha os dados para criar sua conta.');
+}
+$('gateOpenSignUp').addEventListener('click',()=>showGateView('signup'));
+$('gateBackToLogin').addEventListener('click',()=>showGateView('login'));
+
+document.querySelectorAll('[data-toggle-password]').forEach(btn=>{
+ btn.addEventListener('click',()=>{
+  const field=$(btn.dataset.togglePassword);
+  if(!field)return;
+  const visible=field.type==='password';
+  field.type=visible?'text':'password';
+  btn.setAttribute('aria-pressed',String(visible));
+  btn.setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');
+  btn.textContent=visible?'◎':'◉';
+ });
+});
+
+$('gateCreateAccount').addEventListener('click',async()=>{
  if(!sb){gateMessage('Serviço de cadastro indisponível. Verifique sua conexão.',true);return}
- const {email,password}=gateCredentials();
- if(!email||password.length<6){gateMessage('Informe um e-mail válido e senha com pelo menos 6 caracteres.',true);return}
- const btn=$('gateSignUp');btn.disabled=true;
- try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'}});if(error)throw error;
- if(data.session){authUser=data.user;await syncCloud();setAuthUI();startCloudRealtime();}else gateMessage('Cadastro criado! Confirme seu e-mail e depois entre.');
- }catch(e){gateMessage('Não foi possível criar a conta: '+(e.message||e),true)}finally{btn.disabled=false}
+ const email=$('gateSignupEmail').value.trim();
+ const password=$('gateSignupPassword').value;
+ const confirmation=$('gateSignupConfirm').value;
+ if(!email||!$('gateSignupEmail').checkValidity()){gateMessage('Informe um endereço de e-mail válido.',true);$('gateSignupEmail').focus();return}
+ if(password.length<6){gateMessage('A senha precisa ter pelo menos 6 caracteres.',true);$('gateSignupPassword').focus();return}
+ if(password!==confirmation){gateMessage('As senhas não conferem. Digite novamente.',true);$('gateSignupConfirm').focus();return}
+ const btn=$('gateCreateAccount');btn.disabled=true;btn.innerHTML='CRIANDO...';
+ try{
+  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'}});
+  if(error)throw error;
+  if(data.session){authUser=data.user;await syncCloud();setAuthUI();startCloudRealtime();}
+  else{showGateView('login');$('gateEmail').value=email;gateMessage('Cadastro criado! Confirme seu e-mail e depois entre no aplicativo.');}
+ }catch(e){gateMessage('Não foi possível criar a conta: '+(e.message||e),true)}
+ finally{btn.disabled=false;btn.innerHTML='CRIAR CONTA <span>→</span>'}
 });
 $('gateReset').addEventListener('click',async()=>{
  if(!sb){gateMessage('Serviço de recuperação indisponível.',true);return}
