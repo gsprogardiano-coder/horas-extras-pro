@@ -245,7 +245,17 @@ footer{color:#969da8}
  #historyReportPrint table{width:100%;border-collapse:collapse;white-space:normal;color:#111;font-size:10px}
  #historyReportPrint th,#historyReportPrint td{color:#111;border:1px solid #bbb;padding:5px;text-align:left}
  #historyReportPrint .report-summary{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0}
- #historyReportPrint .report-summary div{border:1px solid #bbb;padding:8px;min-width:120px}
+ #historyReportPrint .report-summary div{border:1px solid #bbb;padding:8px;min-width:120px;flex:1}
+ #historyReportPrint .report-brand{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;border-bottom:3px solid #222;padding-bottom:12px;margin-bottom:12px}
+ #historyReportPrint .report-brand h1{font-size:22px;margin:0 0 3px;letter-spacing:1px}
+ #historyReportPrint .report-brand p{font-size:8px;letter-spacing:1.4px;margin:0;color:#555}
+ #historyReportPrint .report-brand>strong{font-size:14px;text-align:right}
+ #historyReportPrint .report-meta{margin:10px 0 14px}
+ #historyReportPrint .report-summary b{display:block;font-size:9px;color:#555}
+ #historyReportPrint .report-summary strong{display:block;font-size:14px;margin-top:4px}
+ #historyReportPrint .report-section-title{font-size:13px;margin:18px 0 7px}
+ #historyReportPrint .report-footnote{font-size:9px;color:#444;margin-top:12px}
+ #historyReportPrint tr{break-inside:avoid}
 }
 
 
@@ -652,6 +662,25 @@ input,select,textarea{
 .finance-highlights{margin-top:14px}
 @media(max-width:600px){.finance-month-labels{gap:7px}.finance-month-labels>div{padding:10px}.finance-table{min-width:500px}}
 
+
+.integrity-panel{margin-top:14px;padding:14px;border:1px solid var(--border,#ddd);border-radius:12px}
+.integrity-panel h3{margin:0 0 10px;font-size:1rem}
+.integrity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.integrity-grid>div{padding:10px;border-radius:9px;background:var(--surface-2,#f5f5f5);display:flex;flex-direction:column;gap:3px;min-width:0}
+.integrity-grid small{font-size:.65rem;letter-spacing:.04em;opacity:.72}
+.integrity-grid strong{font-size:1.25rem;overflow-wrap:anywhere}
+.integrity-grid span{font-size:.75rem;opacity:.8}
+@media(max-width:520px){.integrity-grid{grid-template-columns:1fr 1fr}.integrity-grid>div:last-child{grid-column:1/-1}}
+.checkline{display:flex;align-items:center;gap:9px;font-weight:600}.checkline input{width:20px;height:20px}#paymentExpected,#paymentDifference{display:block;font-size:1.15rem}
+/* Navegação por abas: perfil fixo, apenas uma seção de trabalho aberta */
+.section-tabs{display:flex;gap:8px;overflow-x:auto;white-space:nowrap;padding:10px 16px;margin:0 auto 14px;max-width:1200px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.section-tabs button{flex:0 0 auto;border:1px solid var(--border,#444);border-radius:999px;background:var(--surface,#202027);color:var(--text,#fff);padding:10px 15px;font-size:13px;font-weight:750}
+.section-tabs button.active{background:var(--accent,#e51d3b);border-color:var(--accent,#e51d3b);color:#fff}
+.section-tabs button:focus-visible{outline:3px solid var(--accent,#e51d3b);outline-offset:2px}
+.hero{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:center}
+.hero>div{min-width:0}
+.hero strong{display:block}
+@media(max-width:560px){.hero{grid-template-columns:1fr 1fr}.hero>div:last-child{grid-column:1/-1}}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -761,11 +790,29 @@ input,select,textarea{
     <p class="note" id="profileEditStatus" role="status" aria-live="polite"></p>
   </div>
  </section>
-  <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
+  <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small>HORAS ADICIONAIS NO MÊS</small><strong id="heroHours">0h</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
 </header>
-
+<nav class="section-tabs no-print" id="sectionTabs" aria-label="Seções do aplicativo">
+ <button type="button" data-tab="smartDashboard" class="active" aria-selected="true">Visão geral</button>
+ <button type="button" data-tab="accountCard">Conta</button>
+ <button type="button" data-tab="donationCard">Doação</button>
+ <button type="button" data-tab="reminderCard">Lembretes</button>
+ <button type="button" data-tab="paymentCompareCard">Pagamento</button>
+ <button type="button" data-tab="salarySettingsPanel">Configurações</button>
+ <button type="button" data-tab="entryCard">Registrar jornada</button>
+ <button type="button" data-tab="calendarCard">Calendário</button>
+ <button type="button" data-tab="summaryCard">Resumo</button>
+ <button type="button" data-tab="financialComparisonCard">Painel financeiro</button>
+ <button type="button" data-tab="annualPerformanceCard">Desempenho anual</button>
+ <button type="button" data-tab="historyCard">Histórico</button>
+ <button type="button" data-tab="reportsCard">Relatórios</button>
+ <button type="button" data-tab="salaryCalc">Simulador</button>
+ <button type="button" data-tab="tutorialCard">Tutorial</button>
+</nav>
 
 <main>
+ <section class="card" id="smartDashboard" style="margin-bottom:16px"><h2>Visão geral · Gardy Horas Pro</h2><p class="note">Indicadores do mês selecionado.</p><div class="stats">
+ <div class="stat"><small>HORAS EXTRAS</small><b id="dashOvertime">0h</b></div><div class="stat"><small>VALOR ESTIMADO</small><b id="dashValue">R$ 0,00</b></div><div class="stat"><small>DIAS TRABALHADOS</small><b id="dashWorkdays">0</b></div><div class="stat"><small>DIAS A CONFERIR</small><b id="dashMissing">0</b></div></div><p class="note" id="dashInsight">Indicadores do mês.</p></section>
  <section class="card" style="margin-bottom:16px" id="accountCard">
   <h2>Conta e sincronização na nuvem</h2>
   <p class="note" style="margin-top:-8px">Crie sua conta gratuita para acessar seus registros em outros aparelhos. Seus dados ficam privados na sua conta.</p>
@@ -788,8 +835,10 @@ input,select,textarea{
   <p class="note" id="pixStatus" role="status"></p>
  </section>
 
-<div class="grid" id="mainTools">
-  <section class="card">
+<section class="card" id="reminderCard" style="margin-bottom:16px"><h2>Lembretes de jornada</h2><p class="note">Verifica dias úteis sem lançamento quando você abre o app ou toca em verificar. Não envia notificações com o navegador fechado.</p><div class="actions"><label class="checkline"><input type="checkbox" id="reminderEnabled"> Ativar lembrete ao abrir</label><button type="button" class="secondary" id="checkRemindersBtn">Verificar pendências</button></div><p class="note" id="reminderMessage" role="status">Lembretes desativados.</p></section>
+<section class="card" id="paymentCompareCard" style="margin-bottom:16px"><h2>Conferência de pagamento</h2><p class="note">Compare o valor recebido de horas adicionais com a estimativa do app. É uma conferência informativa; consulte também o holerite.</p><div class="fields"><div class="field"><label for="paymentReceived">Valor recebido (R$)</label><input id="paymentReceived" type="number" min="0" step=".01" placeholder="0,00"></div><div class="field"><label>Estimativa do app</label><strong id="paymentExpected">R$ 0,00</strong></div><div class="field"><label>Diferença</label><strong id="paymentDifference">—</strong></div></div><div class="actions"><button type="button" id="savePaymentBtn">Salvar conferência</button><button type="button" class="secondary" id="clearPaymentBtn">Limpar</button></div><p class="note" id="paymentMessage" role="status">O valor fica salvo neste aparelho por mês.</p></section>
+<div class="grid tab-panel" id="mainTools">
+  <section class="card" id="salarySettingsPanel">
    <h2>01 · Configurações salariais</h2>
    <div class="fields">
     <div class="field"><label for="salary">Salário mensal (R$)</label><input id="salary" type="number" min="0" step=".01" value=""></div>
@@ -845,13 +894,23 @@ input,select,textarea{
    <div class="stat"><small>HORAS NOTURNAS (INFORMATIVO)</small><b id="nightValue">R$ 0,00</b></div>
    <div class="stat"><small>DSR ESTIMADO SOBRE ADICIONAIS</small><b id="dsrValue">R$ 0,00</b></div>
   </div>
-  <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Gerar relatório PDF profissional</button></div>
+  <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><button class="secondary" id="recoverAutoBackup">Recuperar cópia automática</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Gerar relatório PDF profissional</button></div>
   <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Valor das adicionais</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
-  <p class="note" id="storageNote">Com login, os dados são sincronizados com sua conta na nuvem. Sem login, permanecem neste aparelho. Use Backup JSON como cópia de segurança.</p>
+  <p class="note" id="storageNote">Com login, os dados são sincronizados com sua conta na nuvem. Sem login, permanecem neste aparelho. O app mantém até 3 cópias automáticas locais anteriores às alterações, quando o navegador permite. Use Backup JSON para guardar uma cópia fora deste aparelho.</p>
   <div class="sync-panel" aria-live="polite" role="status">
    <span class="sync-dot" id="syncDot"></span>
    <span id="syncStatusText">Verificando armazenamento…</span>
    <button type="button" class="secondary" id="syncRetryBtn" hidden>Tentar sincronizar</button>
+  </div>
+  <div class="integrity-panel" id="integrityPanel" aria-live="polite">
+   <h3>Integridade dos dados</h3>
+   <div class="integrity-grid">
+    <div><small>NESTE APARELHO</small><strong id="integrityLocalCount">—</strong><span>lançamentos</span></div>
+    <div><small>CÓPIAS AUTOMÁTICAS</small><strong id="integrityBackupCount">—</strong><span>disponíveis</span></div>
+    <div><small>NA NUVEM</small><strong id="integrityCloudCount">—</strong><span id="integrityCloudDate">aguardando conferência</span></div>
+   </div>
+   <p class="note" id="integrityNote">A contagem ajuda a identificar diferenças, mas não comprova que cada campo esteja idêntico entre aparelhos.</p>
+   <button type="button" class="secondary" id="integrityCheckBtn">Conferir agora</button>
   </div>
  </section>
 
@@ -1117,7 +1176,8 @@ function dbInteger(value){
  return Math.max(0,Math.trunc(n+0.5));
 }
 async function cloudSaveEntries(force=false){
- if(!sb||!authUser||(cloudBusy&&!force))return;
+ if(!sb||!authUser)return false;
+ if(cloudBusy&&!force)return false;
  try{
   const deletedIds=getDeletedEntryIds();
   const rows=entries.filter(e=>!deletedIds.has(String(e.id))).map(e=>{
@@ -1133,6 +1193,7 @@ async function cloudSaveEntries(force=false){
    if(!written||written.length!==rows.length)throw new Error('A nuvem confirmou '+(written?.length||0)+' de '+rows.length+' lançamentos. Verifique as permissões RLS.');
   }
   // Não apagar registros remotos ausentes na cópia local: outro aparelho pode estar desatualizado.
+  return true;
  }catch(e){authMessage('Falha ao sincronizar jornadas: '+(e.message||e),true);throw e}
 }
 async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
@@ -1164,6 +1225,7 @@ async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
  localStorage.setItem(settingsKey(),JSON.stringify(currentSettings));
  load();const {count:verifiedCount,error:verifyError}=await sb.from('work_entries').select('entry_id',{count:'exact',head:true}).eq('user_id',authUser.id);
  if(verifyError)throw verifyError;
+ localStorage.setItem(integrityMetaKey(),JSON.stringify({cloudCount:verifiedCount||0,checkedAt:new Date().toISOString()}));renderIntegrityPanel();
  authMessage('Conta conectada. '+(verifiedCount||0)+' lançamento(s) encontrados na nuvem.');setSyncStatus('ok',(verifiedCount||0)+' lançamento(s) encontrados na nuvem.');
  }catch(e){authMessage('Não foi possível sincronizar: '+(e.message||e)+'. Confira as tabelas e políticas RLS no Supabase.',true)}finally{cloudBusy=false}}
 let cloudChannel=null, cloudRefreshTimer=null, cloudPollTimer=null;
@@ -1178,9 +1240,16 @@ async function refreshCloudFromRealtime(){
  try{
   const {data,error}=await sb.from('work_entries').select('*').eq('user_id',authUser.id);
   if(error)throw error;
-  const remote=(data||[]).map(r=>{const e=r.entry_data||{id:r.entry_id||r.id,date:r.work_date,dayType:dayTypeFromDatabase(r.day_type),start:r.start_time||'',end:r.end_time||'',hasBreak:false,obs:r.notes||''};return {...e,id:String(e.id??r.entry_id??r.id)};});
+  const deletedIds=getDeletedEntryIds();
+  const remoteAll=(data||[]).map(r=>{const e=r.entry_data||{id:r.entry_id||r.id,date:r.work_date,dayType:dayTypeFromDatabase(r.day_type),start:r.start_time||'',end:r.end_time||'',hasBreak:false,obs:r.notes||''};return {...e,id:String(e.id??r.entry_id??r.id)};});
+  // Uma atualização em tempo real nunca deve ressuscitar um lançamento excluído neste aparelho.
+  const remote=remoteAll.filter(e=>!deletedIds.has(String(e.id)));
+  for(const e of remoteAll.filter(e=>deletedIds.has(String(e.id)))){
+   const {error:delError}=await sb.from('work_entries').delete().eq('user_id',authUser.id).eq('entry_id',String(e.id));
+   if(delError)throw delError;
+  }
   // Mescla por ID: mantém lançamentos locais ainda não enviados e incorpora os da nuvem.
-  const merged=new Map(entries.map(e=>[String(e.id),e]));
+  const merged=new Map(entries.filter(e=>!deletedIds.has(String(e.id))).map(e=>[String(e.id),e]));
   remote.forEach(e=>merged.set(String(e.id),e));
   entries=[...merged.values()].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   localStorage.setItem(dataKey(),JSON.stringify(entries));
@@ -1437,22 +1506,98 @@ function load(){
     entries = [];
   }
   render();
+  if($('integrityPanel'))renderIntegrityPanel();
   if (!storageAvailable) msg('Atenção: este navegador bloqueou o armazenamento. Os registros ficam apenas enquanto esta página estiver aberta.', true);
 }
+function integrityMetaKey(){return dataKey()+'__integrity_meta_v1';}
+function renderIntegrityPanel(){
+ const localCount=Array.isArray(entries)?entries.length:0;
+ const backups=getAutoBackups();
+ $('integrityLocalCount').textContent=String(localCount);
+ $('integrityBackupCount').textContent=String(backups.length);
+ let meta={};try{meta=JSON.parse(localStorage.getItem(integrityMetaKey())||'{}')||{};}catch(_){}
+ $('integrityCloudCount').textContent=Number.isFinite(meta.cloudCount)?String(meta.cloudCount):'—';
+ $('integrityCloudDate').textContent=meta.checkedAt?'conferido em '+new Date(meta.checkedAt).toLocaleString('pt-BR'):'aguardando conferência';
+ $('integrityNote').textContent=authUser
+  ? 'A contagem da nuvem é da última conferência confirmada. Quantidades iguais não garantem que o conteúdo de cada lançamento seja idêntico.'
+  : 'Entre na sua conta para conferir a quantidade de lançamentos na nuvem. As cópias automáticas ficam somente neste navegador.';
+}
+$('integrityCheckBtn').addEventListener('click',()=>{
+ renderIntegrityPanel();
+ if(!authUser||!sb){msg('Entre na sua conta para conferir os dados da nuvem.',true);return;}
+ $('integrityCheckBtn').disabled=true;
+ $('integrityNote').textContent='Consultando a nuvem…';
+ syncCloud().then(()=>{renderIntegrityPanel();}).catch(()=>{renderIntegrityPanel();})
+ .finally(()=>{$('integrityCheckBtn').disabled=false;});
+});
 function setSyncStatus(state,message,showRetry=false){
  const panel=$('syncStatusText')?.closest('.sync-panel');
  if(!panel)return;
  panel.dataset.state=state;
  $('syncStatusText').textContent=message;
  $('syncRetryBtn').hidden=!showRetry;
+ if($('integrityPanel'))renderIntegrityPanel();
 }
+function autoBackupKey(){return dataKey()+'__auto_backups_v1';}
+function saveAutoBackup(rawOverride=null){
+ try{
+  const raw=rawOverride===null?window.localStorage.getItem(dataKey()):rawOverride;
+  if(!raw)return false;
+  let history=[];
+  try{history=JSON.parse(window.localStorage.getItem(autoBackupKey())||'[]');}catch(_){history=[];}
+  if(!Array.isArray(history))history=[];
+  const latest=history[0];
+  if(latest&&latest.data===raw)return false;
+  history.unshift({savedAt:new Date().toISOString(),data:raw});
+  history=history.slice(0,3);
+  try{window.localStorage.setItem(autoBackupKey(),JSON.stringify(history));}
+  catch(_){
+   // Se o espaço estiver acabando, mantém apenas a cópia mais recente possível.
+   try{window.localStorage.setItem(autoBackupKey(),JSON.stringify(history.slice(0,1)));}catch(__){return false;}
+  }
+  return true;
+ }catch(_){return false;}
+}
+function getAutoBackups(){
+ try{const value=JSON.parse(window.localStorage.getItem(autoBackupKey())||'[]');return Array.isArray(value)?value.filter(x=>x&&typeof x.data==='string'):[];}
+ catch(_){return [];}
+}
+$('recoverAutoBackup').addEventListener('click',()=>{
+ const backups=getAutoBackups();
+ if(!backups.length){msg('Ainda não há cópias automáticas disponíveis neste aparelho.',true);return;}
+ const choices=backups.map((b,i)=>`${i+1}. ${new Date(b.savedAt).toLocaleString('pt-BR')} · ${(()=>{try{return JSON.parse(b.data).length+' lançamentos';}catch(_){return 'cópia';}})()}`).join('\\n');
+ const answer=prompt('Escolha a cópia que deseja recuperar. Isso substituirá os lançamentos atuais deste perfil.\\n\\n'+choices+'\\n\\nDigite 1, 2 ou 3:','1');
+ if(answer===null)return;
+ const index=Number(answer)-1;
+ if(!Number.isInteger(index)||index<0||index>=backups.length){msg('Opção inválida. Nenhum dado foi alterado.',true);return;}
+ if(!confirm('Antes da recuperação, o estado atual será guardado como cópia automática. Deseja continuar?'))return;
+ try{
+  saveAutoBackup();
+  const recovered=JSON.parse(backups[index].data);
+  if(!Array.isArray(recovered))throw new Error('Cópia inválida');
+  entries=recovered;
+  window.localStorage.setItem(dataKey(),JSON.stringify(entries));
+  render();
+  if(authUser){
+   setSyncStatus('pending','Cópia recuperada neste aparelho. Enviando para a nuvem…');
+   cloudSaveEntries().then(ok=>setSyncStatus(ok===false?'pending':'ok',ok===false?'Cópia recuperada localmente; sincronização pendente.':'Cópia recuperada e enviada à nuvem.',ok===false))
+    .catch(e=>setSyncStatus('error','Cópia recuperada localmente, mas a nuvem não confirmou: '+(e.message||e),true));
+  }else setSyncStatus('local','Cópia recuperada somente neste aparelho.');
+  msg('Cópia automática recuperada. Confira os lançamentos e as configurações.');
+ }catch(e){msg('Não foi possível recuperar essa cópia. Os dados atuais foram preservados.',true);}
+});
 function persist(){
   try {
+    saveAutoBackup();
     window.localStorage.setItem(dataKey(), JSON.stringify(entries));
     storageAvailable = true;
     if(authUser){
       setSyncStatus('pending','Salvo neste aparelho. Enviando para sua conta…');
-      cloudSaveEntries().then(()=>{
+      cloudSaveEntries().then(confirmed=>{
+        if(confirmed===false){
+          setSyncStatus('pending','Salvo neste aparelho. A sincronização está ocupada; tente novamente ao terminar.',true);
+          return;
+        }
         setSyncStatus('ok','Sincronização concluída. O envio dos registros foi confirmado.');
       }).catch(err=>{
         setSyncStatus('error','Salvo neste aparelho, mas a nuvem não confirmou: '+(err.message||err),true);
@@ -1607,6 +1752,10 @@ function renderSalary(list,ev,nv,dsr){
  $('netPay').textContent=money(Math.max(0,gross-total));
  $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Faltas não justificadas: ${abs.count} dia(s), em ${abs.weeks} semana(s) com perda estimada de DSR. Estimativa de salário/30 por dia e um DSR por semana afetada. Confirme a aplicação com o RH/convenção coletiva.`;
 }
+function paymentStorageKey(k){return dataKey()+'__payment_received__'+k;}
+function updatePaymentComparison(){const k=$('month').value||'',saved=k?localStorage.getItem(paymentStorageKey(k)):null;if(document.activeElement!==$('paymentReceived'))$('paymentReceived').value=saved??'';const expected=k?financeMonthMetrics(k).total:0,raw=$('paymentReceived').value;$('paymentExpected').textContent=money(expected||0);$('paymentDifference').textContent=raw===''?'—':money(Number(raw)-expected);}
+function updateSmartDashboard(list,extra,extraValue,dsr){const k=$('month').value||'',now=new Date(),upto=k===`${now.getFullYear()}-${pad(now.getMonth()+1)}`?now.getDate():(k?new Date(Number(k.slice(0,4)),Number(k.slice(5,7)),0).getDate():0),seen=new Set(list.map(e=>e.date));let missing=0;for(let d=1;d<=upto;d++){const date=k+'-'+pad(d),dow=new Date(date+'T12:00:00').getDay();if(dow!==0&&dow!==6&&!seen.has(date))missing++;}$('dashOvertime').textContent=fmtHours(Math.round(extra*60));$('dashValue').textContent=money(extraValue+dsr);$('dashWorkdays').textContent=String(list.filter(e=>(e.dayType||'work')==='work').length);$('dashMissing').textContent=String(missing);$('dashInsight').textContent=missing?`${missing} dia(s) útil(eis) sem lançamento até a data de referência. Confira se foram trabalho, folga ou ausência.`:'Nenhum dia útil pendente até a data de referência.';}
+function checkInAppReminders(){const enabled=localStorage.getItem(dataKey()+'__reminder_enabled')==='1';$('reminderEnabled').checked=enabled;if(!enabled){$('reminderMessage').textContent='Lembretes desativados.';return;}const k=$('month').value||'',now=new Date(),upto=k===`${now.getFullYear()}-${pad(now.getMonth()+1)}`?now.getDate():0,seen=new Set(entries.map(e=>e.date)),pending=[];for(let d=1;d<=upto;d++){const date=k+'-'+pad(d),dow=new Date(date+'T12:00:00').getDay();if(dow!==0&&dow!==6&&!seen.has(date))pending.push(date.split('-').reverse().join('/'));}$('reminderMessage').textContent=pending.length?`${pending.length} dia(s) útil(eis) sem lançamento: ${pending.slice(0,6).join(', ')}${pending.length>6?'…':''}. Registre também folgas e ausências.`:'Nenhum dia útil pendente até hoje.';}
 function render(){
  let list=monthEntries(), worked=0,night=0,extra=0,ev=0,nv=0;
  const offDays=list.filter(e=>e.dayType==='off').length;
@@ -1620,8 +1769,10 @@ function render(){
  const wd=Math.max(1,Number($('dsrWorkdays').value)||1),rd=Math.max(0,Number($('dsrRestdays').value)||0);
  const dsr=(ev+nv)/wd*rd;
  renderSalary(list,ev,nv,dsr);
- $('days').textContent=list.length;$('offDays').textContent=offDays;$('worked').textContent=fmtHours(worked);$('overtime').textContent=fmtHours(Math.round(extra*60));$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('dsrValue').textContent=money(dsr);$('heroTotal').textContent=money(ev);
+ $('days').textContent=list.length;$('offDays').textContent=offDays;$('worked').textContent=fmtHours(worked);$('overtime').textContent=fmtHours(Math.round(extra*60));$('night').textContent=fmtHours(night);$('extraValue').textContent=money(ev);$('nightValue').textContent=money(nv);$('dsrValue').textContent=money(dsr);$('heroTotal').textContent=money(ev);$('heroHours').textContent=fmtHours(Math.round(extra*60));
  renderCalendar(list);
+ updateSmartDashboard(list,extra,ev,dsr);
+ updatePaymentComparison();
 }
 function msg(t,bad=false){$('formMsg').textContent=t;$('formMsg').style.color=bad?'#bd4545':'#167a59'}
 function toggleDayType(){
@@ -1711,6 +1862,7 @@ $('restore').onchange=async ev=>{
  try{
   const data=JSON.parse(await file.text());
   if(!data||!Array.isArray(data.entries))throw new Error('Arquivo inválido');
+  saveAutoBackup();
   entries=data.entries;persist();
   if(data.settings){Object.entries(data.settings).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v;});saveSettings();render();}
   msg('Backup restaurado no perfil '+activeProfileName+'.');
@@ -1897,20 +2049,34 @@ function reportEntries(scope,month){
  if(scope==='year')return entries.filter(e=>(e.date||'').startsWith(month.slice(0,4))).sort((a,b)=>a.date.localeCompare(b.date));
  return entries.slice().sort((a,b)=>a.date.localeCompare(b.date));
 }
-function reportMetrics(list){let worked=0,night=0,extra=0,value=0,off=0,justified=0,unjustified=0;list.forEach(e=>{const c=calc(e);worked+=c.worked;night+=c.night;extra+=Math.round((Number(c.extra)||0)*60);value+=c.total;if(e.dayType==='off')off++;if(e.dayType==='absence_justified')justified++;if(e.dayType==='absence_unjustified')unjustified++;});return {days:list.length,worked,night,extra,value,off,justified,unjustified};}
+function reportMetrics(list){
+ let worked=0,night=0,extra=0,value=0,off=0,justified=0,unjustified=0;
+ const months=new Set();
+ list.forEach(e=>{
+  const c=calc(e);worked+=c.worked;night+=c.night;extra+=Math.round((Number(c.extra)||0)*60);
+  value+=Number(c.extraVal??c.total)||0;
+  if(e.date)months.add(String(e.date).slice(0,7));
+  if(e.dayType==='off')off++;
+  if(e.dayType==='absence_justified')justified++;
+  if(e.dayType==='absence_unjustified')unjustified++;
+ });
+ let dsr=0;
+ months.forEach(key=>{const month=financeMonthMetrics(key);dsr+=month.dsr;});
+ return {days:list.length,worked,night,extra,value,dsr,total:value+dsr,off,justified,unjustified};
+}
 function reportTitle(scope,month){if(scope==='month')return `Relatório mensal — ${month}`;if(scope==='year')return `Relatório anual — ${month.slice(0,4)}`;return 'Relatório geral — todo o histórico';}
 function buildReportHtml(list,title){
  const m=reportMetrics(list);const rows=list.map(e=>{const c=calc(e),type=({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho';return `<tr><td>${e.date.split('-').reverse().join('/')}</td><td>${type}</td><td>${e.start||'—'}</td><td>${e.end||'—'}</td><td>${e.hasBreak?(e.breakStart||'')+'–'+(e.breakEnd||''):'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round((Number(c.extra)||0)*60))}</td><td>${fmtHours(c.night)}</td><td>${money(c.total)}</td><td>${String(e.obs||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td></tr>`}).join('');
- return `<h1>GARDY HORAS PRO</h1><h2>${title}</h2><p>Funcionário: ${activeProfileName||'—'} · Gerado em ${new Date().toLocaleDateString('pt-BR')}</p><div class="report-summary"><div><b>Marcações</b><br>${m.days}</div><div><b>Horas trabalhadas</b><br>${fmtHours(m.worked)}</div><div><b>Horas adicionais</b><br>${fmtHours(m.extra)}</div><div><b>Valor adicional</b><br>${money(m.value)}</div><div><b>Horas noturnas</b><br>${fmtHours(m.night)}</div><div><b>Folgas</b><br>${m.off}</div><div><b>Faltas justificadas</b><br>${m.justified}</div><div><b>Faltas não justificadas</b><br>${m.unjustified}</div></div><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Adicionais</th><th>Noturnas</th><th>Valor adicional</th><th>Observação</th></tr></thead><tbody>${rows||'<tr><td colspan="10">Nenhum lançamento neste período.</td></tr>'}</tbody></table><p>As horas adicionais são apresentadas separadamente do salário. DSR é uma estimativa e não está somado ao valor das horas adicionais.</p>`;
+ return `<div class="report-brand"><div><h1>GARDY HORAS PRO</h1><p>CONTROLE DE JORNADA · RELATÓRIO DE HORAS</p></div><strong>${title}</strong></div><p class="report-meta"><b>Funcionário:</b> ${String(activeProfileName||'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))} <span>·</span> <b>Emitido em:</b> ${new Date().toLocaleDateString('pt-BR')}</p><div class="report-summary"><div><b>Marcações</b><strong>${m.days}</strong></div><div><b>Horas trabalhadas</b><strong>${fmtHours(m.worked)}</strong></div><div><b>Horas adicionais</b><strong>${fmtHours(m.extra)}</strong></div><div><b>Valor adicional</b><strong>${money(m.value)}</strong></div><div><b>DSR estimado</b><strong>${money(m.dsr)}</strong></div><div><b>Total estimado</b><strong>${money(m.total)}</strong></div><div><b>Horas noturnas</b><strong>${fmtHours(m.night)}</strong></div><div><b>Folgas</b><strong>${m.off}</strong></div><div><b>Faltas justificadas</b><strong>${m.justified}</strong></div><div><b>Faltas não justificadas</b><strong>${m.unjustified}</strong></div></div><h3 class="report-section-title">Detalhamento das marcações</h3><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Adicionais</th><th>Noturnas</th><th>Valor adicional</th><th>Observação</th></tr></thead><tbody>${rows||'<tr><td colspan="10">Nenhum lançamento neste período.</td></tr>'}</tbody></table><p class="report-footnote">Valores estimados conforme salário, divisor e parâmetros de DSR atualmente configurados. Se essas configurações mudaram ao longo do período, os valores históricos podem não refletir os parâmetros vigentes em cada data. O DSR é apresentado separadamente e não está somado ao valor das horas adicionais.</p>`;
 }
 function printHistory(scope){const month=$('reportMonth').value||$('month').value;const list=reportEntries(scope,month);$('historyReportPrint').innerHTML=buildReportHtml(list,reportTitle(scope,month));document.body.classList.add('print-history');window.print();setTimeout(()=>document.body.classList.remove('print-history'),700);$('reportStatus').textContent=`Relatório preparado: ${list.length} lançamento(s). Na janela de impressão, escolha Salvar como PDF.`;}
 function excelEscape(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function exportExcel(scope){
  const month=$('reportMonth').value||$('month').value,list=reportEntries(scope,month),m=reportMetrics(list),title=reportTitle(scope,month);
- const headers=['Data','Tipo','Entrada','Saída','Intervalo','Trabalhadas (min)','Adicionais (h)','Noturnas (min)','Valor adicional (R$)','Observação'];
- const data=list.map(e=>{const c=calc(e);return [e.date,({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho',e.start||'',e.end||'',e.hasBreak?(e.breakStart||'')+'-'+(e.breakEnd||''):'',Math.round(c.worked),Number(c.extra||0).toFixed(2),Math.round(c.night),Number(c.total||0).toFixed(2),e.obs||''];});
+ const headers=['Data','Dia da semana','Tipo','Entrada','Saída','Intervalo','Trabalhadas (min)','Adicionais (h)','Noturnas (min)','Valor adicional (R$)','Observação'];
+ const data=list.map(e=>{const c=calc(e),weekday=e.date?new Date(e.date+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long'}):'';return [e.date,weekday,({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho',e.start||'',e.end||'',e.hasBreak?(e.breakStart||'')+'-'+(e.breakEnd||''):'',Math.round(c.worked),Number(c.extra||0).toFixed(2),Math.round(c.night),Number((c.extraVal??c.total)||0).toFixed(2),e.obs||''];});
  const sheet=(name,rows)=>`<Worksheet ss:Name="${name}"><Table>${rows.map(row=>'<Row>'+row.map(v=>`<Cell><Data ss:Type="${typeof v==='number'?'Number':'String'}">${excelEscape(v)}</Data></Cell>`).join('')+'</Row>').join('')}</Table></Worksheet>`;
- const summary=[['Relatório',title],['Funcionário',activeProfileName||''],['Marcações',m.days],['Horas trabalhadas (min)',m.worked],['Horas adicionais (min)',m.extra],['Valor adicional (R$)',Number(m.value.toFixed(2))],['Horas noturnas (min)',m.night],['Folgas',m.off],['Faltas justificadas',m.justified],['Faltas não justificadas',m.unjustified]];
+ const summary=[['Relatório',title],['Funcionário',activeProfileName||''],['Emitido em',new Date().toLocaleDateString('pt-BR')],['Marcações',m.days],['Horas trabalhadas (min)',m.worked],['Horas adicionais (min)',m.extra],['Valor adicional (R$)',Number(m.value.toFixed(2))],['DSR estimado (R$)',Number(m.dsr.toFixed(2))],['Total estimado (R$)',Number(m.total.toFixed(2))],['Horas noturnas (min)',m.night],['Folgas',m.off],['Faltas justificadas',m.justified],['Faltas não justificadas',m.unjustified],['Observação','DSR estimado separado; valores usam os parâmetros atuais.']];
  const xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheet('Resumo',summary)}${sheet('Lancamentos',[headers,...data])}</Workbook>`;
  const blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Gardy-Horas-Pro-${scope}-${safeFileName(activeProfileName)}-${month||'historico'}.xls`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);$('reportStatus').textContent=`Excel exportado com ${list.length} lançamento(s), em duas planilhas: Resumo e Lançamentos.`;
 }
@@ -2018,6 +2184,44 @@ restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 // Carrega o perfil ativo; dados antigos são migrados quando o usuário confirma o nome.
 load();
 setSyncStatus(authUser?'pending':'local',authUser?'Conta conectada. Verificando sincronização…':'Salvo somente neste aparelho. Entre na conta para sincronizar.');
+$('reminderEnabled').addEventListener('change',e=>{localStorage.setItem(dataKey()+'__reminder_enabled',e.target.checked?'1':'0');checkInAppReminders();});
+$('checkRemindersBtn').addEventListener('click',checkInAppReminders);
+$('savePaymentBtn').addEventListener('click',()=>{const k=$('month').value||'',v=$('paymentReceived').value;if(!k||v===''||!Number.isFinite(Number(v))||Number(v)<0){$('paymentMessage').textContent='Informe um valor válido e selecione o mês.';return;}localStorage.setItem(paymentStorageKey(k),String(Number(v)));updatePaymentComparison();$('paymentMessage').textContent='Conferência salva neste aparelho.';});
+$('clearPaymentBtn').addEventListener('click',()=>{const k=$('month').value||'';if(k)localStorage.removeItem(paymentStorageKey(k));$('paymentReceived').value='';updatePaymentComparison();});
+$('month').addEventListener('change',()=>{updatePaymentComparison();checkInAppReminders();});
+$('syncRetryBtn').addEventListener('click',async()=>{if(!navigator.onLine){setSyncStatus('pending','Sem internet. Os dados continuam salvos neste aparelho.',true);return;}$('syncRetryBtn').disabled=true;try{await syncCloud();setSyncStatus('ok','Sincronização concluída.');}catch(e){setSyncStatus('error','Falha ao sincronizar: '+(e.message||e),true);}finally{$('syncRetryBtn').disabled=false;}});
+window.addEventListener('online',()=>{if(authUser){setSyncStatus('pending','Conexão restabelecida. Sincronizando…');syncCloud().then(()=>setSyncStatus('ok','Sincronização concluída após reconexão.')).catch(e=>setSyncStatus('error','Falha após reconexão: '+(e.message||e),true));}});
+window.addEventListener('offline',()=>setSyncStatus('local','Sem conexão. Seus dados continuam salvos neste aparelho; a sincronização será tentada quando a internet voltar.',!!authUser));
+checkInAppReminders();
+const sectionTabTargets=['smartDashboard','accountCard','donationCard','reminderCard','paymentCompareCard','salarySettingsPanel','entryCard','calendarCard','summaryCard','financialComparisonCard','annualPerformanceCard','historyCard','reportsCard','salaryCalc','tutorialCard'];
+function activateSectionTab(target,scroll=true){
+ const valid=sectionTabTargets.includes(target)?target:'smartDashboard';
+ sectionTabTargets.forEach(id=>{
+  const el=$(id);if(!el)return;
+  const show=id===valid;
+  el.hidden=!show;
+  el.classList.toggle('tab-hidden',!show);
+ });
+ const tools=$('mainTools');
+ if(tools){
+  const showTools=valid==='salarySettingsPanel'||valid==='entryCard';
+  tools.hidden=!showTools;
+  $('salarySettingsPanel').hidden=valid!=='salarySettingsPanel';
+  $('entryCard').hidden=valid!=='entryCard';
+ }
+ document.querySelectorAll('#sectionTabs [data-tab]').forEach(btn=>{
+  const active=btn.dataset.tab===valid;btn.classList.toggle('active',active);btn.setAttribute('aria-selected',active?'true':'false');
+ });
+ localStorage.setItem('gardy_active_section_tab',valid);
+ if(scroll){const targetEl=$(valid);if(targetEl)targetEl.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+document.querySelectorAll('#sectionTabs [data-tab]').forEach(btn=>btn.addEventListener('click',()=>activateSectionTab(btn.dataset.tab)));
+document.querySelectorAll('.gardy-nav-links [data-go]').forEach(btn=>btn.addEventListener('click',()=>{
+ const id=btn.dataset.go;
+ const mapping={top:'smartDashboard',entryCard:'entryCard',calendarCard:'calendarCard',historyCard:'historyCard',reportsCard:'reportsCard',salaryCalc:'salaryCalc',accountCard:'accountCard',tutorialCard:'tutorialCard'};
+ activateSectionTab(mapping[id]||'smartDashboard');
+}));
+activateSectionTab('smartDashboard',false);
 initAuth();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
