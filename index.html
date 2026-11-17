@@ -691,6 +691,46 @@ input,select,textarea{
 .report-preview table{width:100%;border-collapse:collapse;font-size:11px;white-space:normal}
 .report-preview th,.report-preview td{border:1px solid #ddd;padding:5px;text-align:left}
 @media print{.report-preview{display:none!important}}
+@page{size:A4 landscape;margin:9mm}
+.gardy-report{font-family:Arial,Helvetica,sans-serif;color:#20242c;background:#fff;width:100%;box-sizing:border-box}
+.gr-header{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:0 0 13px;border-bottom:3px solid #b5122b;margin-bottom:12px}
+.gr-brand{display:flex;align-items:center;gap:10px}
+.gr-mark{width:36px;height:36px;border-radius:10px;background:#b5122b;color:#fff;display:grid;place-items:center;font-size:22px;font-weight:900}
+.gr-name{font-size:18px;font-weight:900;letter-spacing:1.8px;color:#151922}
+.gr-tag{font-size:8px;letter-spacing:1.3px;color:#69717e;margin-top:3px}
+.gr-title{text-align:right;max-width:48%}
+.gr-title span,.gr-person small,.gr-kpis small{display:block;font-size:8px;letter-spacing:1px;color:#737b87;font-weight:700;margin-bottom:4px}
+.gr-title strong{font-size:14px;color:#b5122b}
+.gr-person{display:grid;grid-template-columns:2fr 1fr .6fr;gap:10px;padding:10px 12px;background:#f4f5f7;border:1px solid #e1e4e8;border-radius:7px;margin-bottom:10px}
+.gr-person strong{font-size:10px;color:#20242c}
+.gr-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-bottom:13px}
+.gr-kpis>div{border:1px solid #e1e4e8;border-radius:6px;padding:8px 9px;min-height:42px}
+.gr-kpis strong{font-size:13px;color:#20242c}
+.gr-kpis .gr-total{background:#fff3f4;border-color:#e7b6be}
+.gr-kpis .gr-total strong{color:#b5122b}
+.gr-section-heading{display:flex;justify-content:space-between;align-items:center;margin:5px 0 7px;color:#20242c}
+.gr-section-heading strong{font-size:12px}.gr-section-heading span{font-size:9px;color:#737b87}
+.gr-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px;color:#20242c}
+.gr-table thead{display:table-header-group}
+.gr-table th{background:#202631;color:#fff;text-align:left;padding:7px 5px;font-size:7px;letter-spacing:.25px}
+.gr-table td{border-bottom:1px solid #e5e7eb;padding:6px 5px;vertical-align:top;overflow-wrap:anywhere}
+.gr-table tbody tr:nth-child(even){background:#f7f8fa}
+.gr-table .date{white-space:nowrap}.gr-table .num,.gr-table .money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.gr-table .money{font-weight:700}.gr-table .obs{font-size:7px}
+.gr-empty{text-align:center;padding:18px!important;color:#69717e}
+.gr-foot{margin-top:10px;padding-top:7px;border-top:1px solid #e1e4e8;color:#69717e;font-size:7px;line-height:1.4}
+.gr-foot p{margin:0 0 4px}.gr-foot span{display:block;text-align:right;font-weight:700}
+@media print{
+ html,body{background:#fff!important;color:#20242c!important;margin:0!important;padding:0!important}
+ body.print-history>*:not(#historyReportPrint){display:none!important}
+ body.print-history #historyReportPrint{display:block!important;position:static!important;width:100%!important;margin:0!important;padding:0!important;background:#fff!important;color:#20242c!important;visibility:visible!important}
+ body.print-history #historyReportPrint *{visibility:visible!important}
+ body.print-history .gardy-report{display:block!important}
+ body.print-history .gr-table tr{break-inside:avoid;page-break-inside:avoid}
+ body.print-history .gr-kpis,body.print-history .gr-person{break-inside:avoid;page-break-inside:avoid}
+ body.print-history .gr-table{font-size:8px!important}
+ .report-preview{display:none!important}
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2082,27 +2122,68 @@ function reportMetrics(list){
  return {days:list.length,worked,night,extra,value,dsr,total:value+dsr,off,justified,unjustified};
 }
 function reportTitle(scope,month){if(scope==='month')return `Relatório mensal — ${month}`;if(scope==='year')return `Relatório anual — ${month.slice(0,4)}`;return 'Relatório geral — todo o histórico';}
+function reportEscape(value){
+ return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 function buildReportHtml(list,title){
- const m=reportMetrics(list);const rows=list.map(e=>{const c=calc(e),type=({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho';return `<tr><td>${e.date.split('-').reverse().join('/')}</td><td>${type}</td><td>${e.start||'—'}</td><td>${e.end||'—'}</td><td>${e.hasBreak?(e.breakStart||'')+'–'+(e.breakEnd||''):'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round((Number(c.extra)||0)*60))}</td><td>${fmtHours(c.night)}</td><td>${money(c.total)}</td><td>${String(e.obs||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td></tr>`}).join('');
- return `<div class="report-brand"><div><h1>GARDY HORAS PRO</h1><p>CONTROLE DE JORNADA · RELATÓRIO DE HORAS</p></div><strong>${title}</strong></div><p class="report-meta"><b>Funcionário:</b> ${String(activeProfileName||'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))} <span>·</span> <b>Emitido em:</b> ${new Date().toLocaleDateString('pt-BR')}</p><div class="report-summary"><div><b>Marcações</b><strong>${m.days}</strong></div><div><b>Horas trabalhadas</b><strong>${fmtHours(m.worked)}</strong></div><div><b>Horas adicionais</b><strong>${fmtHours(m.extra)}</strong></div><div><b>Valor adicional</b><strong>${money(m.value)}</strong></div><div><b>DSR estimado</b><strong>${money(m.dsr)}</strong></div><div><b>Total estimado</b><strong>${money(m.total)}</strong></div><div><b>Horas noturnas</b><strong>${fmtHours(m.night)}</strong></div><div><b>Folgas</b><strong>${m.off}</strong></div><div><b>Faltas justificadas</b><strong>${m.justified}</strong></div><div><b>Faltas não justificadas</b><strong>${m.unjustified}</strong></div></div><h3 class="report-section-title">Detalhamento das marcações</h3><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Adicionais</th><th>Noturnas</th><th>Valor adicional</th><th>Observação</th></tr></thead><tbody>${rows||'<tr><td colspan="10">Nenhum lançamento neste período.</td></tr>'}</tbody></table><p class="report-footnote">Valores estimados conforme salário, divisor e parâmetros de DSR atualmente configurados. Se essas configurações mudaram ao longo do período, os valores históricos podem não refletir os parâmetros vigentes em cada data. O DSR é apresentado separadamente e não está somado ao valor das horas adicionais.</p>`;
+ const m=reportMetrics(list);
+ const rows=list.map(e=>{
+  const c=calc(e),type=({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho';
+  return `<tr>
+   <td class="date">${reportEscape(e.date?e.date.split('-').reverse().join('/'):'—')}</td>
+   <td>${reportEscape(type)}</td><td>${reportEscape(e.start||'—')}</td><td>${reportEscape(e.end||'—')}</td>
+   <td>${e.hasBreak?reportEscape((e.breakStart||'')+'–'+(e.breakEnd||'')):'—'}</td>
+   <td class="num">${fmtHours(c.worked)}</td>
+   <td class="num">${fmtHours(Math.round((Number(c.extra)||0)*60))}</td>
+   <td class="num">${fmtHours(c.night)}</td>
+   <td class="money">${money(Number(c.extraVal??c.total)||0)}</td>
+   <td class="obs">${reportEscape(e.obs||'—')}</td>
+  </tr>`;
+ }).join('');
+ const emitted=new Date().toLocaleString('pt-BR');
+ return `<article class="gardy-report">
+  <header class="gr-header">
+   <div class="gr-brand"><div class="gr-mark">G</div><div><div class="gr-name">GARDY HORAS PRO</div><div class="gr-tag">CONTROLE DE JORNADA E HORAS ADICIONAIS</div></div></div>
+   <div class="gr-title"><span>RELATÓRIO</span><strong>${reportEscape(title)}</strong></div>
+  </header>
+  <section class="gr-person"><div><small>FUNCIONÁRIO</small><strong>${reportEscape(activeProfileName||'—')}</strong></div><div><small>EMITIDO EM</small><strong>${reportEscape(emitted)}</strong></div><div><small>LANÇAMENTOS</small><strong>${m.days}</strong></div></section>
+  <section class="gr-kpis">
+   <div><small>HORAS TRABALHADAS</small><strong>${fmtHours(m.worked)}</strong></div>
+   <div><small>HORAS ADICIONAIS</small><strong>${fmtHours(m.extra)}</strong></div>
+   <div><small>VALOR ADICIONAL</small><strong>${money(m.value)}</strong></div>
+   <div><small>DSR ESTIMADO</small><strong>${money(m.dsr)}</strong></div>
+   <div class="gr-total"><small>TOTAL ESTIMADO</small><strong>${money(m.total)}</strong></div>
+   <div><small>HORAS NOTURNAS</small><strong>${fmtHours(m.night)}</strong></div>
+   <div><small>FOLGAS</small><strong>${m.off}</strong></div>
+   <div><small>FALTAS JUSTIFICADAS</small><strong>${m.justified}</strong></div>
+   <div><small>FALTAS NÃO JUSTIFICADAS</small><strong>${m.unjustified}</strong></div>
+  </section>
+  <div class="gr-section-heading"><strong>Detalhamento das marcações</strong><span>${list.length} registro(s)</span></div>
+  <table class="gr-table"><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Adicionais</th><th>Noturnas</th><th>Valor adicional</th><th>Observações</th></tr></thead><tbody>${rows||'<tr><td colspan="10" class="gr-empty">Nenhum lançamento encontrado neste período.</td></tr>'}</tbody></table>
+  <footer class="gr-foot"><p><strong>Critério de leitura:</strong> DSR estimado é demonstrado separadamente e já está incluído no total estimado. Horas noturnas são informativas conforme a configuração atual do aplicativo.</p><p>Valores estimados com salário, divisor e parâmetros de DSR atualmente configurados. Alterações posteriores nas configurações podem afetar a estimativa de períodos anteriores. Confira os dados com seu controle e holerite.</p><span>Gardy Horas Pro · Documento gerado pelo aplicativo</span></footer>
+ </article>`;
 }
 function printHistory(scope){
  const month=$('reportMonth').value||$('month').value;
  if(!month){$('reportStatus').textContent='Selecione um mês para gerar o relatório.';return;}
  const list=reportEntries(scope,month);
+ if(!list.length){$('reportStatus').textContent='Nenhum lançamento encontrado no período. Confira o mês ou escolha todo o histórico.';return;}
  const html=buildReportHtml(list,reportTitle(scope,month));
  $('reportPreview').innerHTML=html;
- $('historyReportPrint').innerHTML=html;
- if(!list.length){
-  $('reportStatus').textContent='Nenhum lançamento encontrado no período selecionado. Confira o mês ou escolha todo o histórico.';
-  return;
- }
- $('reportStatus').textContent=`Relatório com ${list.length} lançamento(s) preparado. Na tela de impressão, escolha “Salvar como PDF”.`;
+ const printRoot=$('historyReportPrint');
+ printRoot.innerHTML=html;
+ // O alvo de impressão vai para o nível do body: evita que o main/section pai o esconda.
+ document.body.appendChild(printRoot);
  document.body.classList.add('print-history');
- requestAnimationFrame(()=>window.print());
- const cleanup=()=>{document.body.classList.remove('print-history');};
+ $('reportStatus').textContent=`Relatório completo preparado: ${list.length} lançamento(s). Escolha “Salvar como PDF” na impressão.`;
+ const cleanup=()=>{
+  document.body.classList.remove('print-history');
+  const host=$('reportsCard');
+  if(host&&printRoot.parentElement===document.body)host.appendChild(printRoot);
+ };
  window.addEventListener('afterprint',cleanup,{once:true});
- setTimeout(cleanup,5000);
+ requestAnimationFrame(()=>setTimeout(()=>window.print(),120));
+ setTimeout(cleanup,12000);
 }
 function excelEscape(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function exportExcel(scope){
