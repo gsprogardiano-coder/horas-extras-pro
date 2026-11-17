@@ -633,6 +633,15 @@ input,select,textarea{
  .annual-month b{font-size:9px}
 }
 
+
+.sync-panel{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);font-size:13px}
+.sync-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#9aa6b2}
+.sync-panel[data-state="local"] .sync-dot{background:#d69e2e}
+.sync-panel[data-state="pending"] .sync-dot{background:#3182ce}
+.sync-panel[data-state="ok"] .sync-dot{background:#269765}
+.sync-panel[data-state="error"] .sync-dot{background:#bd4545}
+.sync-panel button{margin-left:auto;min-height:38px;padding:7px 11px}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -829,6 +838,11 @@ input,select,textarea{
   <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Gerar relatório PDF profissional</button></div>
   <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Valor das adicionais</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
   <p class="note" id="storageNote">Com login, os dados são sincronizados com sua conta na nuvem. Sem login, permanecem neste aparelho. Use Backup JSON como cópia de segurança.</p>
+  <div class="sync-panel" aria-live="polite" role="status">
+   <span class="sync-dot" id="syncDot"></span>
+   <span id="syncStatusText">Verificando armazenamento…</span>
+   <button type="button" class="secondary" id="syncRetryBtn" hidden>Tentar sincronizar</button>
+  </div>
  </section>
 
 
@@ -1031,7 +1045,7 @@ try{if(window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_UR
 function authMessage(t,bad=false){$('authStatus').textContent=t;$('authStatus').style.color=bad?'#ff829b':'#8fa6c1'}
 function pixMessage(t,bad=false){$('pixStatus').textContent=t;$('pixStatus').style.color=bad?'#ff829b':'#8fa6c1'}
 function gateMessage(t,bad=false){const el=$('gateStatus');if(el){el.textContent=t;el.style.color=bad?'#ff829b':'#aeb8c5'}}
-function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){activeProfileName=accountFullName(authUser);localStorage.setItem(PROFILE_NAME_KEY,activeProfileName);updateProfileLabel();authMessage('Conta conectada. Verificando sincronização...');gateMessage('Acesso autorizado.');} }
+function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){activeProfileName=accountFullName(authUser);localStorage.setItem(PROFILE_NAME_KEY,activeProfileName);updateProfileLabel();authMessage('Conta conectada. Verificando sincronização...');setSyncStatus('pending','Conta conectada. Verificando sincronização…');gateMessage('Acesso autorizado.');} }
 function crc16(str){let crc=0xFFFF;for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
 function tlv(id,value){const v=String(value);return id+String(v.length).padStart(2,'0')+v}
 function makePixPayload(amount){
@@ -1117,7 +1131,7 @@ async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
  localStorage.setItem(settingsKey(),JSON.stringify(currentSettings));
  load();const {count:verifiedCount,error:verifyError}=await sb.from('work_entries').select('entry_id',{count:'exact',head:true}).eq('user_id',authUser.id);
  if(verifyError)throw verifyError;
- authMessage('Conta conectada. '+(verifiedCount||0)+' lançamento(s) sincronizado(s).');
+ authMessage('Conta conectada. '+(verifiedCount||0)+' lançamento(s) encontrados na nuvem.');setSyncStatus('ok',(verifiedCount||0)+' lançamento(s) encontrados na nuvem.');
  }catch(e){authMessage('Não foi possível sincronizar: '+(e.message||e)+'. Confira as tabelas e políticas RLS no Supabase.',true)}finally{cloudBusy=false}}
 let cloudChannel=null, cloudRefreshTimer=null, cloudPollTimer=null;
 function stopCloudRealtime(){
@@ -1392,14 +1406,32 @@ function load(){
   render();
   if (!storageAvailable) msg('Atenção: este navegador bloqueou o armazenamento. Os registros ficam apenas enquanto esta página estiver aberta.', true);
 }
+function setSyncStatus(state,message,showRetry=false){
+ const panel=$('syncStatusText')?.closest('.sync-panel');
+ if(!panel)return;
+ panel.dataset.state=state;
+ $('syncStatusText').textContent=message;
+ $('syncRetryBtn').hidden=!showRetry;
+}
 function persist(){
   try {
     window.localStorage.setItem(dataKey(), JSON.stringify(entries));
-    if(authUser)cloudSaveEntries();
     storageAvailable = true;
-    msg('Jornada adicionada e salva neste navegador.');
+    if(authUser){
+      setSyncStatus('pending','Salvo neste aparelho. Enviando para sua conta…');
+      cloudSaveEntries().then(()=>{
+        setSyncStatus('ok','Sincronização concluída. O envio dos registros foi confirmado.');
+      }).catch(err=>{
+        setSyncStatus('error','Salvo neste aparelho, mas a nuvem não confirmou: '+(err.message||err),true);
+      });
+      msg('Jornada salva neste aparelho. Sincronização em andamento.');
+    }else{
+      setSyncStatus('local','Salvo somente neste aparelho. Entre na conta para sincronizar.');
+      msg('Jornada adicionada e salva neste navegador.');
+    }
   } catch (err) {
     storageAvailable = false;
+    setSyncStatus('error','Não foi possível salvar neste aparelho. Faça um backup assim que possível.',false);
     msg('Jornada adicionada, mas o navegador não permitiu salvar. Não feche esta página e exporte o CSV.', true);
   }
   render();
@@ -1891,11 +1923,24 @@ const oldRenderForHistory=render;
 render=function(){oldRenderForHistory();renderHistory();renderAnnualPerformance();if($('reportMonth')&&$('month')&& !$('reportMonth').value)$('reportMonth').value=$('month').value;};
 $('annualYear')?.addEventListener('change',renderAnnualPerformance);
 
+$('syncRetryBtn')?.addEventListener('click',async()=>{
+ const btn=$('syncRetryBtn');
+ if(!authUser){setSyncStatus('local','Entre na conta para sincronizar seus registros.',false);return;}
+ btn.disabled=true;btn.textContent='Sincronizando…';
+ setSyncStatus('pending','Tentando enviar os registros para sua conta…');
+ try{
+  await cloudSaveEntries(true);
+  setSyncStatus('ok','Envio concluído. A nuvem confirmou os registros enviados.');
+ }catch(e){
+  setSyncStatus('error','Não foi possível sincronizar: '+(e.message||e),true);
+ }finally{btn.disabled=false;btn.textContent='Tentar sincronizar';}
+});
 migrateLegacyToActive();
 updateProfileLabel();
 restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 // Carrega o perfil ativo; dados antigos são migrados quando o usuário confirma o nome.
 load();
+setSyncStatus(authUser?'pending':'local',authUser?'Conta conectada. Verificando sincronização…':'Salvo somente neste aparelho. Entre na conta para sincronizar.');
 initAuth();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
