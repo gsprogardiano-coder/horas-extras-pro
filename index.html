@@ -672,6 +672,15 @@ input,select,textarea{
 .integrity-grid strong{font-size:1.25rem;overflow-wrap:anywhere}
 .integrity-grid span{font-size:.75rem;opacity:.8}
 @media(max-width:520px){.integrity-grid{grid-template-columns:1fr 1fr}.integrity-grid>div:last-child{grid-column:1/-1}}
+/* Correção de contraste do painel de integridade no tema escuro */
+#integrityPanel{background:linear-gradient(145deg,#17191f,#0c0e12);border:1px solid #555b66;color:#f4f5f7}
+#integrityPanel .integrity-grid>div{background:linear-gradient(145deg,#252830,#15171c)!important;border:1px solid #454a55;color:#f4f5f7}
+#integrityPanel .integrity-grid small{color:#c4c9d2;opacity:1}
+#integrityPanel .integrity-grid strong{color:#fff}
+#integrityPanel .integrity-grid span{color:#aeb4be;opacity:1}
+#integrityPanel #integrityNote{color:#b8bec8}
+#integrityPanel #integrityCheckBtn:disabled{opacity:.65;cursor:wait}
+
 .checkline{display:flex;align-items:center;gap:9px;font-weight:600}.checkline input{width:20px;height:20px}#paymentExpected,#paymentDifference{display:block;font-size:1.15rem}
 /* Navegação por abas: perfil fixo, apenas uma seção de trabalho aberta */
 .section-tabs{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:10px 12px;overflow:visible;white-space:normal;padding:12px 16px;margin:0 auto 14px;max-width:1200px;scrollbar-width:none}
@@ -1679,14 +1688,31 @@ function renderIntegrityPanel(){
   ? 'A contagem da nuvem é da última conferência confirmada. Quantidades iguais não garantem que o conteúdo de cada lançamento seja idêntico.'
   : 'Entre na sua conta para conferir a quantidade de lançamentos na nuvem. As cópias automáticas ficam somente neste navegador.';
 }
-$('integrityCheckBtn').addEventListener('click',()=>{
- renderIntegrityPanel();
- if(!authUser||!sb){msg('Entre na sua conta para conferir os dados da nuvem.',true);return;}
- $('integrityCheckBtn').disabled=true;
- $('integrityNote').textContent='Consultando a nuvem…';
- syncCloud().then(()=>{renderIntegrityPanel();}).catch(()=>{renderIntegrityPanel();})
- .finally(()=>{$('integrityCheckBtn').disabled=false;});
-});
+$('integrityCheckBtn').addEventListener('click',async()=>{
+  const btn=$('integrityCheckBtn');
+  renderIntegrityPanel();
+  if(!authUser||!sb){
+   $('integrityNote').textContent='Entre na sua conta para conferir a quantidade de lançamentos armazenados na nuvem.';
+   return;
+  }
+  if(!navigator.onLine){
+   $('integrityNote').textContent='Sem conexão. A conferência da nuvem não foi realizada. Seus dados locais permanecem preservados.';
+   return;
+  }
+  btn.disabled=true;btn.textContent='Conferindo…';
+  $('integrityNote').textContent='Consultando a quantidade de lançamentos na nuvem…';
+  try{
+   const {count,error}=await sb.from('work_entries').select('entry_id',{count:'exact',head:true}).eq('user_id',authUser.id);
+   if(error)throw error;
+   localStorage.setItem(integrityMetaKey(),JSON.stringify({cloudCount:count||0,checkedAt:new Date().toISOString()}));
+   renderIntegrityPanel();
+   $('integrityNote').textContent=`Conferência concluída: ${count||0} lançamento(s) encontrados na nuvem. A comparação é por quantidade, não valida o conteúdo de cada registro.`;
+  }catch(err){
+   $('integrityNote').textContent='Não foi possível consultar a nuvem: '+(err.message||String(err));
+  }finally{
+   btn.disabled=false;btn.textContent='Conferir agora';
+  }
+ });
 function setSyncStatus(state,message,showRetry=false){
  const panel=$('syncStatusText')?.closest('.sync-panel');
  if(!panel)return;
@@ -2200,7 +2226,16 @@ function renderHistory(){
   [...groups.get(year).keys()].sort((a,b)=>b.localeCompare(a)).forEach(month=>{
    const list=groups.get(year).get(month),m=historyMonthSummary(list),row=document.createElement('div');row.className='history-month';
    const label=document.createElement('div');const monthName=new Date(Number(year),Number(month)-1,1).toLocaleDateString('pt-BR',{month:'long'});label.innerHTML=`<strong>${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</strong><small>${list.length} marcação(ões) · ${fmtHours(m.worked)} trabalhadas · ${fmtHours(m.extra)} adicionais · ${money(m.value)}</small>`;
-   const btn=document.createElement('button');btn.type='button';btn.textContent='Abrir mês';btn.addEventListener('click',()=>{$('month').value=`${year}-${month}`;$('reportMonth').value=$('month').value;render();$('summaryCard').scrollIntoView({behavior:'smooth',block:'start'});});
+   const btn=document.createElement('button');btn.type='button';btn.textContent='Abrir mês';btn.addEventListener('click',()=>{
+     const monthKey=`${year}-${month}`;
+     $('month').value=monthKey;
+     $('reportMonth').value=monthKey;
+     const firstEntry=list.slice().sort((a,b)=>a.date.localeCompare(b.date))[0];
+     $('date').value=firstEntry?.date||`${monthKey}-01`;
+     render();
+     if(typeof activateSectionTab==='function')activateSectionTab('calendarCard',false);
+     $('calendarCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+    });
    row.append(label,btn);details.appendChild(row);
   });host.appendChild(details);
  });
@@ -2435,7 +2470,36 @@ restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 load();
 setSyncStatus(authUser?'pending':'local',authUser?'Conta conectada. Verificando sincronização…':'Salvo somente neste aparelho. Entre na conta para sincronizar.');
 $('reminderEnabled').addEventListener('change',e=>{localStorage.setItem(dataKey()+'__reminder_enabled',e.target.checked?'1':'0');checkInAppReminders();});
-$('checkRemindersBtn').addEventListener('click',checkInAppReminders);
+function pendingWorkDates(){
+  const now=new Date(),monthKey=$('month').value||`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+  const [y,m]=monthKey.split('-').map(Number);if(!y||!m)return [];
+  const currentKey=`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+  const isCurrent=monthKey===currentKey;
+  const isFuture=monthKey>currentKey;
+  const lastDay=isFuture?0:(isCurrent?now.getDate():new Date(y,m,0).getDate());
+  const seen=new Set(entries.map(e=>e.date)),pending=[];
+  for(let day=1;day<=lastDay;day++){
+   const date=`${y}-${pad(m)}-${pad(day)}`,dow=new Date(date+'T12:00:00').getDay();
+   if(dow!==0&&dow!==6&&!seen.has(date))pending.push(date);
+  }
+  return pending;
+}
+$('checkRemindersBtn').addEventListener('click',()=>{
+  const pending=pendingWorkDates();
+  const selectedMonth=$('month').value||`${today.getFullYear()}-${pad(today.getMonth()+1)}`;
+  const target=pending[0]||`${selectedMonth}-01`;
+  const monthKey=target.slice(0,7);
+  $('month').value=monthKey;
+  $('date').value=target;
+  if($('reportMonth'))$('reportMonth').value=monthKey;
+  render();
+  if(typeof activateSectionTab==='function')activateSectionTab('calendarCard',false);
+  $('calendarHelp').textContent=pending.length
+   ? `${pending.length} dia(s) útil(eis) pendente(s). Primeiro dia a conferir: ${target.split('-').reverse().join('/')}. Toque na data no calendário para registrar.`
+   : 'Nenhuma pendência encontrada neste período. O calendário foi aberto.';
+  $('calendarCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+  checkInAppReminders();
+});
 $('savePaymentBtn').addEventListener('click',()=>{const k=$('month').value||'',v=$('paymentReceived').value;if(!k||v===''||!Number.isFinite(Number(v))||Number(v)<0){$('paymentMessage').textContent='Informe um valor válido e selecione o mês.';return;}localStorage.setItem(paymentStorageKey(k),String(Number(v)));updatePaymentComparison();$('paymentMessage').textContent='Conferência salva neste aparelho.';});
 $('clearPaymentBtn').addEventListener('click',()=>{const k=$('month').value||'';if(k)localStorage.removeItem(paymentStorageKey(k));$('paymentReceived').value='';updatePaymentComparison();});
 $('month').addEventListener('change',()=>{if($('reportMonth'))$('reportMonth').value=$('month').value;updatePaymentComparison();checkInAppReminders();});
