@@ -183,6 +183,9 @@ th{background:#17191f}
 .monthrow strong,.monthrow span{color:#d8dbe0}
 #accountCard{background:linear-gradient(145deg,#17191f,#0c0e12);border-color:#7d2633}
 #accountCard .note{color:#aeb4be}
+.profile-editor{margin-top:18px;padding:17px;border:1px solid #71303b;border-radius:14px;background:linear-gradient(145deg,#1b1519,#0d0e12)}
+.profile-editor-title{font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:.03em}
+#profileName[readonly]{opacity:.95;cursor:default}
 body.authenticated #accountCard .fields{display:none}
 body.authenticated #accountCard h2{margin-bottom:8px}
 body.authenticated #accountCard .actions{margin-top:8px}
@@ -279,7 +282,11 @@ footer{color:#969da8}
         <div class="login-create">Ainda não tem conta? <button id="gateOpenSignUp" type="button">Criar conta grátis</button></div>
       </div>
       <div id="gateSignUpView" hidden>
-        <div class="login-heading"><span class="login-user-icon">✚</span><div><h1>Criar nova conta</h1><p>Cadastre seu e-mail e crie uma senha segura.</p></div></div>
+        <div class="login-heading"><span class="login-user-icon">✚</span><div><h1>Criar nova conta</h1><p>Informe seus dados para começar.</p></div></div>
+        <label for="gateSignupFirstName">Nome</label>
+        <input id="gateSignupFirstName" type="text" autocomplete="given-name" maxlength="50" placeholder="Seu nome">
+        <label for="gateSignupLastName">Sobrenome</label>
+        <input id="gateSignupLastName" type="text" autocomplete="family-name" maxlength="70" placeholder="Seu sobrenome">
         <label for="gateSignupEmail">E-mail</label>
         <input id="gateSignupEmail" type="email" autocomplete="email" placeholder="seuemail@exemplo.com">
         <label for="gateSignupPassword">Senha (mínimo 6 caracteres)</label>
@@ -351,10 +358,23 @@ footer{color:#969da8}
  <section class="card" style="margin-bottom:16px" id="profileCard">
   <h2>Perfil do funcionário</h2>
   <div class="fields">
-    <div class="field"><label for="profileName">Nome do funcionário</label><input id="profileName" type="text" maxlength="60" placeholder="Digite seu nome"></div>
-    <div class="field" style="justify-content:end"><button id="switchProfile" type="button">Abrir meu perfil</button></div>
+    <div class="field"><label for="profileName">Nome completo</label><input id="profileName" type="text" maxlength="120" placeholder="Seu nome e sobrenome" readonly></div>
+    <div class="field" style="justify-content:end"><button id="switchProfile" type="button">Gerenciar minha conta</button></div>
   </div>
-  <p class="note" id="profileStatus">O perfil identifica o funcionário. Com login, os dados também são sincronizados na sua conta; sem login, permanecem neste aparelho.</p>
+  <p class="note" id="profileStatus">Seu nome e seus dados de acesso aparecem aqui após entrar na conta.</p>
+  <div id="profileEditor" class="profile-editor" hidden>
+    <div class="profile-editor-title">Dados da conta</div>
+    <div class="fields">
+      <div class="field"><label for="editFirstName">Nome</label><input id="editFirstName" type="text" maxlength="50" autocomplete="given-name" placeholder="Seu nome"></div>
+      <div class="field"><label for="editLastName">Sobrenome</label><input id="editLastName" type="text" maxlength="70" autocomplete="family-name" placeholder="Seu sobrenome"></div>
+      <div class="field full"><label for="editAccountEmail">E-mail</label><input id="editAccountEmail" type="email" autocomplete="email" placeholder="seu@email.com"></div>
+      <div class="field"><label for="editNewPassword">Nova senha (opcional)</label><input id="editNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres"></div>
+      <div class="field"><label for="editConfirmPassword">Confirmar nova senha</label><input id="editConfirmPassword" type="password" autocomplete="new-password" placeholder="Repita a nova senha"></div>
+    </div>
+    <p class="note">Deixe os campos de senha vazios se não quiser alterá-la. A alteração do e-mail pode exigir confirmação enviada pelo Supabase.</p>
+    <div class="actions"><button id="saveAccountChanges" type="button">Salvar alterações</button><button id="cancelAccountChanges" type="button" class="secondary">Cancelar</button></div>
+    <p class="note" id="profileEditStatus" role="status" aria-live="polite"></p>
+  </div>
 </section>
 <div class="grid" id="mainTools">
   <section class="card">
@@ -475,7 +495,7 @@ try{if(window.supabase?.createClient)sb=window.supabase.createClient(SUPABASE_UR
 function authMessage(t,bad=false){$('authStatus').textContent=t;$('authStatus').style.color=bad?'#ff829b':'#8fa6c1'}
 function pixMessage(t,bad=false){$('pixStatus').textContent=t;$('pixStatus').style.color=bad?'#ff829b':'#8fa6c1'}
 function gateMessage(t,bad=false){const el=$('gateStatus');if(el){el.textContent=t;el.style.color=bad?'#ff829b':'#aeb8c5'}}
-function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){authMessage('Conta conectada. Verificando sincronização...');gateMessage('Acesso autorizado.');} }
+function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){activeProfileName=accountFullName(authUser);localStorage.setItem(PROFILE_NAME_KEY,activeProfileName);updateProfileLabel();authMessage('Conta conectada. Verificando sincronização...');gateMessage('Acesso autorizado.');} }
 function crc16(str){let crc=0xFFFF;for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
 function tlv(id,value){const v=String(value);return id+String(v.length).padStart(2,'0')+v}
 function makePixPayload(amount){
@@ -653,18 +673,23 @@ document.querySelectorAll('[data-toggle-password]').forEach(btn=>{
 
 $('gateCreateAccount').addEventListener('click',async()=>{
  if(!sb){gateMessage('Serviço de cadastro indisponível. Verifique sua conexão.',true);return}
+ const firstName=$('gateSignupFirstName').value.trim();
+ const lastName=$('gateSignupLastName').value.trim();
  const email=$('gateSignupEmail').value.trim();
  const password=$('gateSignupPassword').value;
  const confirmation=$('gateSignupConfirm').value;
+ if(!firstName){gateMessage('Informe seu nome.',true);$('gateSignupFirstName').focus();return}
+ if(!lastName){gateMessage('Informe seu sobrenome.',true);$('gateSignupLastName').focus();return}
  if(!email||!$('gateSignupEmail').checkValidity()){gateMessage('Informe um endereço de e-mail válido.',true);$('gateSignupEmail').focus();return}
  if(password.length<6){gateMessage('A senha precisa ter pelo menos 6 caracteres.',true);$('gateSignupPassword').focus();return}
  if(password!==confirmation){gateMessage('As senhas não conferem. Digite novamente.',true);$('gateSignupConfirm').focus();return}
+ const fullName=(firstName+' '+lastName).replace(/\s+/g,' ').trim();
  const btn=$('gateCreateAccount');btn.disabled=true;btn.innerHTML='CRIANDO...';
  try{
-  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://gsprogardiano-coder.github.io/horas-extras-pro/'}});
+  const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname,data:{first_name:firstName,last_name:lastName,full_name:fullName,name:fullName}}});
   if(error)throw error;
-  if(data.session){authUser=data.user;await syncCloud();setAuthUI();startCloudRealtime();}
-  else{showGateView('login');$('gateEmail').value=email;gateMessage('Cadastro criado! Confirme seu e-mail e depois entre no aplicativo.');}
+  if(data.session){authUser=data.user;activeProfileName=fullName;localStorage.setItem(PROFILE_NAME_KEY,fullName);await syncCloud();setAuthUI();startCloudRealtime();}
+  else{showGateView('login');$('gateEmail').value=email;gateMessage('Cadastro criado para '+fullName+'! Confirme seu e-mail e depois entre no aplicativo.');}
  }catch(e){gateMessage('Não foi possível criar a conta: '+(e.message||e),true)}
  finally{btn.disabled=false;btn.innerHTML='CRIAR CONTA <span>→</span>'}
 });
@@ -687,10 +712,64 @@ function profileToken(name){return encodeURIComponent(String(name||'Meu perfil')
 function dataKey(){return 'horas-extras-pro-v2-data-'+profileToken(activeProfileName);}
 function settingsKey(){return 'horas-extras-pro-v2-settings-'+profileToken(activeProfileName);}
 function safeFileName(name){return String(name||'funcionario').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'funcionario';}
+function accountFullName(user=authUser){
+  const meta=user?.user_metadata||{};
+  const full=String(meta.full_name||meta.name||[meta.first_name,meta.last_name].filter(Boolean).join(' ')||'').trim();
+  return full||user?.email||activeProfileName||'Meu perfil';
+}
 function updateProfileLabel(){
+  const fullName=accountFullName();
+  if(authUser)activeProfileName=fullName;
   $('profileName').value=activeProfileName;
-  $('profileStatus').textContent='Perfil ativo: '+activeProfileName+'. Os registros são vinculados à sua conta quando a sincronização está ativada.';
+  $('profileStatus').textContent=authUser?'Perfil ativo: '+activeProfileName+'. E-mail da conta: '+authUser.email+'.':'Entre na sua conta para visualizar e gerenciar seus dados de perfil.';
   document.title='Horas Extras Pro — '+activeProfileName;
+}
+function openAccountEditor(){
+  if(!authUser){$('profileStatus').textContent='Entre na sua conta para alterar nome, e-mail ou senha.';return;}
+  const meta=authUser.user_metadata||{};
+  const full=accountFullName();
+  const parts=full===authUser.email?['','']:full.split(' ');
+  $('editFirstName').value=meta.first_name||parts.shift()||'';
+  $('editLastName').value=meta.last_name||(parts.join(' '))||'';
+  $('editAccountEmail').value=authUser.email||'';
+  $('editNewPassword').value='';$('editConfirmPassword').value='';
+  $('profileEditStatus').textContent='';
+  $('profileEditor').hidden=false;
+  $('profileEditor').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function closeAccountEditor(){$('profileEditor').hidden=true;}
+async function saveAccountChanges(){
+  if(!sb||!authUser){$('profileEditStatus').textContent='Entre na conta novamente para alterar seus dados.';return;}
+  const first=$('editFirstName').value.trim(),last=$('editLastName').value.trim();
+  const email=$('editAccountEmail').value.trim();
+  const password=$('editNewPassword').value,confirmPassword=$('editConfirmPassword').value;
+  if(!first||!last){$('profileEditStatus').textContent='Informe nome e sobrenome.';return;}
+  if(!email||!$('editAccountEmail').checkValidity()){$('profileEditStatus').textContent='Informe um e-mail válido.';return;}
+  if(password||confirmPassword){if(password.length<6){$('profileEditStatus').textContent='A nova senha precisa ter pelo menos 6 caracteres.';return;}if(password!==confirmPassword){$('profileEditStatus').textContent='As senhas não conferem.';return;}}
+  const oldName=activeProfileName;
+  const fullName=(first+' '+last).replace(/\s+/g,' ').trim();
+  const attrs={data:{first_name:first,last_name:last,full_name:fullName,name:fullName}};
+  if(email!==authUser.email)attrs.email=email;
+  if(password)attrs.password=password;
+  const btn=$('saveAccountChanges');btn.disabled=true;btn.textContent='SALVANDO...';
+  try{
+    const {data,error}=await sb.auth.updateUser(attrs,{emailRedirectTo:window.location.origin+window.location.pathname});
+    if(error)throw error;
+    authUser=data.user||authUser;
+    activeProfileName=fullName;
+    localStorage.setItem(PROFILE_NAME_KEY,fullName);
+    // Preserva os dados locais ao mudar o nome usado como identificador do perfil.
+    const oldData=localStorage.getItem('horas-extras-pro-v2-data-'+profileToken(oldName));
+    const oldSettings=localStorage.getItem('horas-extras-pro-v2-settings-'+profileToken(oldName));
+    if(oldData&&!localStorage.getItem(dataKey()))localStorage.setItem(dataKey(),oldData);
+    if(oldSettings&&!localStorage.getItem(settingsKey()))localStorage.setItem(settingsKey(),oldSettings);
+    updateProfileLabel();
+    $('profileEditStatus').textContent=email!==authUser.email?'Dados atualizados. Confirme a alteração do e-mail na mensagem enviada pelo Supabase.':'Perfil atualizado com sucesso.';
+    if(email!==authUser.email)$('profileEditStatus').textContent='Nome e senha atualizados. Confirme o novo e-mail na mensagem enviada pelo Supabase.';
+    $('editNewPassword').value='';$('editConfirmPassword').value='';
+    if(authUser)cloudSaveSettings();
+  }catch(e){$('profileEditStatus').textContent='Não foi possível atualizar a conta: '+(e.message||e);}
+  finally{btn.disabled=false;btn.textContent='Salvar alterações';}
 }
 function saveSettings(){
   const s={salary:$('salary').value,divisor:$('divisor').value,daily:$('daily').value,
@@ -947,8 +1026,9 @@ $('rows').onclick=ev=>{
  }
  if(id&&confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')){entries=entries.filter(e=>String(e.id)!==String(id));if(String(editingId)===String(id))resetForm();persist();if(authUser)cloudDeleteEntry(id);msg('Lançamento excluído.')}
 };
-$('switchProfile').addEventListener('click',()=>switchProfile($('profileName').value));
-$('profileName').addEventListener('keydown',ev=>{if(ev.key==='Enter')switchProfile($('profileName').value)});
+$('switchProfile').addEventListener('click',openAccountEditor);
+$('saveAccountChanges').addEventListener('click',saveAccountChanges);
+$('cancelAccountChanges').addEventListener('click',closeAccountEditor);
 ['salary','divisor','daily','extraRate','nightRate','month','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>{
   $(id).addEventListener('input',()=>{saveSettings();render();});
   $(id).addEventListener('change',()=>{saveSettings();render();});
