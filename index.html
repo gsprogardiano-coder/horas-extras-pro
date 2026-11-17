@@ -261,6 +261,10 @@ footer{color:#969da8}
 .profile-top-card .profile-editor{margin-top:13px}
 @media(max-width:760px){.profile-top-card{margin:0 0 14px;padding:13px}.profile-top-fields{grid-template-columns:1fr 1fr}.profile-manage-wrap{grid-column:1/-1}.profile-manage-wrap button{width:100%}}
 @media(max-width:420px){.profile-top-fields{grid-template-columns:1fr}.profile-manage-wrap{grid-column:auto}}
+/* Correções de visibilidade do perfil e remoção do painel de login duplicado após autenticar. */
+#profileEditor[hidden]{display:none!important}
+body.authenticated #accountCard{display:none!important}
+.profile-readonly-value{pointer-events:none}
 
 </style>
 
@@ -786,9 +790,11 @@ async function saveAccountChanges(){
     if(oldData&&!localStorage.getItem(dataKey()))localStorage.setItem(dataKey(),oldData);
     if(oldSettings&&!localStorage.getItem(settingsKey()))localStorage.setItem(settingsKey(),oldSettings);
     updateProfileLabel();
-    $('profileEditStatus').textContent=email!==oldEmail?'Nome e senha atualizados. Confirme o novo e-mail na mensagem enviada pelo Supabase.':'Perfil atualizado com sucesso.';
+    const successMessage=email!==oldEmail?'Nome e senha atualizados. Confirme o novo e-mail na mensagem enviada pelo Supabase.':'Perfil atualizado com sucesso.';
+    $('profileEditStatus').textContent=successMessage;
+    $('profileStatus').textContent=successMessage;
     $('editNewPassword').value='';$('editConfirmPassword').value='';
-    if(authUser)cloudSaveSettings();
+    if(authUser)await cloudSaveSettings();
     closeAccountEditor();
   }catch(e){$('profileEditStatus').textContent='Não foi possível atualizar a conta: '+(e.message||e);}
   finally{btn.disabled=false;btn.textContent='Salvar alterações';}
