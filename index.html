@@ -322,6 +322,61 @@ body.authenticated #accountCard{display:none!important}
  .profile-readonly-value{font-size:15px!important}
 }
 
+
+/* AJUSTE DE SIMETRIA E ALINHAMENTO */
+.card, .grid > *, .fields > *, .field { min-width:0; }
+.card { width:100%; }
+.grid { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }
+.fields { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
+.field.full { grid-column:1/-1; }
+input, select, textarea { width:100%; min-width:0; max-width:100%; }
+.monthrow { min-width:0; }
+.monthrow input { width:100%; max-width:180px; min-width:0; }
+#month { width:100%; max-width:100%; min-width:0; }
+#calendarCard, #calendarCard .calendar { width:100%; min-width:0; }
+.calendar { grid-template-columns:repeat(7,minmax(0,1fr)); align-items:stretch; }
+.calhead, .calday { min-width:0; }
+.calday { width:100%; min-height:clamp(48px,8vw,76px); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:3px; padding:6px 2px; }
+.calday small { font-size:clamp(8px,1.6vw,11px); line-height:1.15; overflow-wrap:anywhere; }
+@media(max-width:760px) {
+  .grid { grid-template-columns:minmax(0,1fr); }
+  .fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .field.full { grid-column:1/-1; }
+  .card { width:100%; }
+  .calendar { gap:4px; }
+  .calday { min-height:clamp(46px,12vw,64px); }
+}
+@media(max-width:380px) {
+  .fields { grid-template-columns:minmax(0,1fr); }
+  .field.full { grid-column:1; }
+}
+/* CORES DO CALENDÁRIO: cada tipo de lançamento tem uma cor própria */
+.calday.has {
+  background:linear-gradient(145deg,#123b25,#0b2417)!important;
+  border:1px solid #269b58!important;
+  color:#a7f3bd!important;
+  box-shadow:inset 0 0 12px #22c55e22!important;
+}
+.calday.off {
+  background:linear-gradient(145deg,#102d50,#0b1b31)!important;
+  border:1px solid #347fc5!important;
+  color:#a9d5ff!important;
+  box-shadow:inset 0 0 12px #3b82f622!important;
+}
+.calday.absence-justified {
+  background:linear-gradient(145deg,#49370d,#241b08)!important;
+  border:1px solid #c99b24!important;
+  color:#ffe08a!important;
+  box-shadow:inset 0 0 12px #eab30822!important;
+}
+.calday.absence-unjustified {
+  background:linear-gradient(145deg,#48131b,#260a10)!important;
+  border:1px solid #dc3545!important;
+  color:#ffabb4!important;
+  box-shadow:inset 0 0 12px #ef444422!important;
+}
+.calday.today { outline:2px solid #f5f5f5!important; outline-offset:1px; }
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -491,7 +546,7 @@ body.authenticated #accountCard{display:none!important}
  </div>
  <section class="card" style="margin-top:16px" id="calendarCard">
   <h2>03 · Calendário mensal</h2>
-  <div class="monthrow"><strong id="calendarTitle">Calendário</strong><span class="right"></span><span class="pill">Verde = trabalho · vermelho = falta não justificada · verde-claro = justificada</span></div>
+  <div class="monthrow"><strong id="calendarTitle">Calendário</strong><span class="right"></span><span class="pill">Verde = trabalho · azul = folga · amarelo = falta justificada · vermelho = falta não justificada</span></div>
   <div class="calendar" id="calendar"></div>
   <p class="note">O calendário mostra os dias com lançamentos. Toque em um dia para preencher a data no formulário.</p>
  </section>
