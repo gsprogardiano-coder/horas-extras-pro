@@ -548,6 +548,9 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
 .tutorial-warning{color:#ffd78a!important;font-size:.94em}
 .tutorial-footer{color:#9ca3af;text-align:center;font-size:.85em;margin-top:16px}
 
+
+/* Registro de jornada recolhido até o usuário escolher uma data ou abrir pelo menu */
+#entryCard.is-collapsed { display:none !important; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -624,7 +627,7 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
 </nav>
 <div class="gardy-nav-links no-print" id="gardyMenuLinks">
  <button type="button" data-go="top">Início</button>
- <button type="button" data-go="mainTools">Marcar ponto</button>
+ <button type="button" data-go="entryCard">Marcar ponto</button>
  <button type="button" data-go="calendarCard">Calendário</button>
  <button type="button" data-go="historyCard">Histórico</button>
  <button type="button" data-go="reportsCard">Relatórios</button>
@@ -699,7 +702,7 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
    </div>
    <p class="note">Este campo vale SOMENTE de segunda a sexta. Deixe 8 horas se essa é sua jornada nesses dias. Sábado é fixo em 4 horas normais (o excedente é adicional) e domingo é fixo em 0 horas normais (todas as horas são adicionais). Não altere este campo para configurar o sábado.</p>
   </section>
-  <section class="card">
+  <section class="card is-collapsed" id="entryCard">
    <h2>02 · Registrar jornada</h2>
    <div class="fields">
     <div class="field full"><label for="date">Data</label><input id="date" type="date"></div>
@@ -1337,6 +1340,7 @@ function resetForm(){
  $('break2').value='yes';$('dayType').value='work';$('obs').value='';toggleDayType();
 }
 function beginEdit(id){
+ openEntryForm();
  const e=entries.find(x=>String(x.id)===String(id));if(!e)return;
  editingId=e.id;
  $('date').value=e.date;$('start').value=e.start;$('end').value=e.end;
@@ -1347,6 +1351,17 @@ function beginEdit(id){
  $('cancelEdit').hidden=false;
  msg('Editando lançamento. Altere os campos e toque em Salvar alterações.');
  $('date').scrollIntoView({behavior:'smooth',block:'center'});
+}
+function openEntryForm(dateValue){
+ const card=$('entryCard');
+ if(!card)return;
+ card.classList.remove('is-collapsed');
+ if(dateValue){$('date').value=dateValue;$('date').disabled=false;}
+ card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeEntryForm(){
+ const card=$('entryCard');
+ if(card)card.classList.add('is-collapsed');
 }
 function renderCalendar(list){
  const [year,monthNum]=($('month').value||'').split('-').map(Number);
@@ -1364,7 +1379,7 @@ function renderCalendar(list){
   const key=`${year}-${pad(monthNum)}-${pad(day)}`;
   const d=document.createElement('button');d.type='button';d.className='calday'+(byDate.has(key)?' has':offDate.has(key)?' off':justifiedDate.has(key)?' absence-justified':unjustifiedDate.has(key)?' absence-unjustified':'')+(key===`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`?' today':'');
   d.innerHTML=`${day}${byDate.has(key)?'<small>Trabalho</small>':offDate.has(key)?'<small>Folga</small>':justifiedDate.has(key)?'<small>Falta just.</small>':unjustifiedDate.has(key)?'<small>Falta injust.</small>':''}`;
-  d.addEventListener('click',()=>{$('date').value=key;$('date').disabled=false;$('date').scrollIntoView({behavior:'smooth',block:'center'});});
+  d.addEventListener('click',()=>openEntryForm(key));
   cal.appendChild(d);
  }
  $('calendarTitle').textContent=new Date(year,monthNum-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
@@ -1453,6 +1468,7 @@ $('saveBtn').onclick=()=>{
    persist();msg('Jornada adicionada e salva neste navegador.');
  }
  resetForm();
+ closeEntryForm();
 };
 $('cancelEdit').onclick=()=>{resetForm();msg('Edição cancelada.')};
 $('clearForm').onclick=()=>{resetForm();msg('Campos limpos.')};
@@ -1464,6 +1480,7 @@ $('rows').onclick=async ev=>{
  if(duplicate){
   const source=entries.find(x=>String(x.id)===String(duplicate));if(!source)return;
   resetForm();
+  openEntryForm();
   const next=new Date(source.date+'T12:00:00');next.setDate(next.getDate()+1);
   $('date').value=`${next.getFullYear()}-${pad(next.getMonth()+1)}-${pad(next.getDate())}`;
   $('start').value=source.start;$('end').value=source.end;
@@ -1661,7 +1678,7 @@ function downloadPDF(blob,name){
 // Navegação do menu principal
 const menuToggle=$('gardyMenuToggle'),menuLinks=$('gardyMenuLinks');
 menuToggle?.addEventListener('click',()=>{const open=menuLinks.classList.toggle('open');menuToggle.setAttribute('aria-expanded',String(open));});
-menuLinks?.addEventListener('click',ev=>{const b=ev.target.closest('[data-go]');if(!b)return;const target=b.dataset.go;if(target==='top'){window.scrollTo({top:0,behavior:'smooth'});}else $(target)?.scrollIntoView({behavior:'smooth',block:'start'});menuLinks.classList.remove('open');menuToggle.setAttribute('aria-expanded','false');});
+menuLinks?.addEventListener('click',ev=>{const b=ev.target.closest('[data-go]');if(!b)return;const target=b.dataset.go;if(target==='top'){window.scrollTo({top:0,behavior:'smooth'});}else if(target==='entryCard'){openEntryForm();}else $(target)?.scrollIntoView({behavior:'smooth',block:'start'});menuLinks.classList.remove('open');menuToggle.setAttribute('aria-expanded','false');});
 
 function historyGroups(){
  const groups=new Map();
