@@ -714,7 +714,7 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
     <div class="field full" id="break2Field"><label for="break2">Intervalo</label><select id="break2"><option value="yes">Descontar intervalo informado</option><option value="no">Sem intervalo informado</option></select></div>
     <div class="field full"><label for="obs">Observação (opcional)</label><input id="obs" type="text" placeholder="Ex.: montagem de evento, show, desmontagem"></div>
    </div>
-   <div class="actions"><button id="saveBtn">＋ Adicionar jornada</button><button class="secondary" id="cancelEdit" hidden>Cancelar edição</button><button class="secondary" id="clearForm">Limpar campos</button></div>
+   <div class="actions"><button id="saveBtn">＋ Adicionar jornada</button><button type="button" class="secondary" id="cancelEntry">Cancelar</button><button class="secondary" id="cancelEdit" hidden>Cancelar edição</button><button class="secondary" id="clearForm">Limpar campos</button></div>
    <p class="note">Escolha Trabalho, Folga, Falta justificada ou Falta não justificada. Ausências não exigem horários. Falta justificada é tratada como abonada; confirme o enquadramento com a empresa/convenção coletiva. Falta não justificada estima desconto do dia e um DSR por semana afetada. Aceita saída após meia-noite.</p>
    <div id="formMsg" class="note" role="status"></div>
   </section>
@@ -824,7 +824,7 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
    <li>Escolha o tipo do dia: Trabalho, Folga, Falta justificada ou Falta não justificada.</li>
    <li>Para Trabalho, informe entrada e saída. Se houve intervalo, marque a opção correspondente e informe início e fim do intervalo.</li>
    <li>Inclua observação se precisar registrar algum detalhe relevante.</li>
-   <li>Toque em <strong>Adicionar jornada</strong>. Para corrigir um lançamento, use a ação de editar na tabela.</li>
+   <li>Toque em <strong>Adicionar jornada</strong>. Para desistir, toque em <strong>Cancelar</strong>; o formulário será fechado. Para corrigir um lançamento, use a ação de editar na tabela.</li>
    <li>Se a jornada atravessou a meia-noite, informe os horários reais; o app aceita saída após meia-noite.</li>
   </ol>
   <p class="tutorial-warning">Confira data, entrada, saída e intervalo antes de salvar. O intervalo é descontado do tempo trabalhado quando informado.</p>
@@ -1470,7 +1470,8 @@ $('saveBtn').onclick=()=>{
  resetForm();
  closeEntryForm();
 };
-$('cancelEdit').onclick=()=>{resetForm();msg('Edição cancelada.')};
+$('cancelEdit').onclick=()=>{resetForm();closeEntryForm();msg('Edição cancelada.')};
+$('cancelEntry').onclick=()=>{resetForm();closeEntryForm();msg('Registro cancelado. O formulário foi fechado.')};
 $('clearForm').onclick=()=>{resetForm();msg('Campos limpos.')};
 $('rows').onclick=async ev=>{
  let edit=ev.target.closest('[data-edit]')?.dataset.edit;
