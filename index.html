@@ -244,6 +244,23 @@ footer{color:#969da8}
  #historyReportPrint .report-summary div{border:1px solid #bbb;padding:8px;min-width:120px}
 }
 
+
+/* Perfil compacto no topo: detalhes de edição ficam recolhidos até o clique. */
+.profile-top-card{margin:0 auto 18px;max-width:1080px;padding:15px 17px;background:linear-gradient(145deg,rgba(25,25,30,.96),rgba(10,11,15,.96));border:1px solid #7d2633;box-shadow:0 6px 20px #0008}
+.profile-top-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.profile-top-heading h2{margin:0;color:#fff;font-size:16px}
+.profile-top-heading h2:after{display:none}
+.profile-active-mark{font-size:10px;font-weight:900;letter-spacing:.12em;color:#ff8995;border:1px solid #8f2534;border-radius:99px;padding:4px 9px}
+.profile-top-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:11px}
+.profile-top-fields .field{min-width:0}
+.profile-top-fields input{height:44px;font-size:14px}
+.profile-manage-wrap{display:flex;align-items:end}
+.profile-manage-wrap button{height:44px;white-space:nowrap;padding:0 16px}
+.profile-top-card .note{margin:8px 0 0;font-size:12px}
+.profile-top-card .profile-editor{margin-top:13px}
+@media(max-width:760px){.profile-top-card{margin:0 0 14px;padding:13px}.profile-top-fields{grid-template-columns:1fr 1fr}.profile-manage-wrap{grid-column:1/-1}.profile-manage-wrap button{width:100%}}
+@media(max-width:420px){.profile-top-fields{grid-template-columns:1fr}.profile-manage-wrap{grid-column:auto}}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -316,6 +333,28 @@ footer{color:#969da8}
 <header>
   <div class="brand"><img class="logo-img" src="./logo-gardy.png" alt="Logo Gardy VJ"><div>HORAS EXTRAS PRO</div><span class="pill">PESSOAL</span></div>
   <div class="sub">Controle de jornada variável · jornada urbana · pagamento de horas extras</div>
+ <section class="card profile-top-card" id="profileCard">
+  <div class="profile-top-heading"><h2>Perfil do funcionário</h2><span class="profile-active-mark">CONTA</span></div>
+  <div class="profile-top-fields">
+   <div class="field"><label for="profileName">Nome completo</label><input id="profileName" type="text" maxlength="120" placeholder="Seu nome e sobrenome" readonly></div>
+   <div class="field"><label for="profileEmail">E-mail</label><input id="profileEmail" type="email" placeholder="E-mail da conta" readonly></div>
+   <div class="profile-manage-wrap"><button id="switchProfile" type="button">Gerenciar minha conta</button></div>
+  </div>
+  <p class="note" id="profileStatus">Entre na sua conta para visualizar e gerenciar seus dados de perfil.</p>
+  <div id="profileEditor" class="profile-editor" hidden>
+    <div class="profile-editor-title">Dados da conta</div>
+    <div class="fields">
+      <div class="field"><label for="editFirstName">Nome</label><input id="editFirstName" type="text" maxlength="50" autocomplete="given-name" placeholder="Seu nome"></div>
+      <div class="field"><label for="editLastName">Sobrenome</label><input id="editLastName" type="text" maxlength="70" autocomplete="family-name" placeholder="Seu sobrenome"></div>
+      <div class="field full"><label for="editAccountEmail">E-mail</label><input id="editAccountEmail" type="email" autocomplete="email" placeholder="seu@email.com"></div>
+      <div class="field"><label for="editNewPassword">Nova senha (opcional)</label><input id="editNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres"></div>
+      <div class="field"><label for="editConfirmPassword">Confirmar nova senha</label><input id="editConfirmPassword" type="password" autocomplete="new-password" placeholder="Repita a nova senha"></div>
+    </div>
+    <p class="note">Deixe os campos de senha vazios se não quiser alterá-la. A alteração do e-mail pode exigir confirmação enviada pelo Supabase.</p>
+    <div class="actions"><button id="saveAccountChanges" type="button">Salvar alterações</button><button id="cancelAccountChanges" type="button" class="secondary">Cancelar</button></div>
+    <p class="note" id="profileEditStatus" role="status" aria-live="polite"></p>
+  </div>
+ </section>
   <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
 </header>
 
@@ -355,27 +394,7 @@ footer{color:#969da8}
   <div id="pixQrWrap" style="display:none;text-align:center;margin-top:14px"><canvas id="pixQr" style="max-width:230px;width:100%;background:#fff;padding:10px;border-radius:12px"></canvas><p class="note">Confira o nome e os dados do recebedor no aplicativo do seu banco antes de confirmar.</p><button type="button" class="secondary" id="pixCopyPayloadBtn">Copiar código Pix</button></div>
   <p class="note" id="pixStatus" role="status"></p>
  </section>
- <section class="card" style="margin-bottom:16px" id="profileCard">
-  <h2>Perfil do funcionário</h2>
-  <div class="fields">
-    <div class="field"><label for="profileName">Nome completo</label><input id="profileName" type="text" maxlength="120" placeholder="Seu nome e sobrenome" readonly></div>
-    <div class="field" style="justify-content:end"><button id="switchProfile" type="button">Gerenciar minha conta</button></div>
-  </div>
-  <p class="note" id="profileStatus">Seu nome e seus dados de acesso aparecem aqui após entrar na conta.</p>
-  <div id="profileEditor" class="profile-editor" hidden>
-    <div class="profile-editor-title">Dados da conta</div>
-    <div class="fields">
-      <div class="field"><label for="editFirstName">Nome</label><input id="editFirstName" type="text" maxlength="50" autocomplete="given-name" placeholder="Seu nome"></div>
-      <div class="field"><label for="editLastName">Sobrenome</label><input id="editLastName" type="text" maxlength="70" autocomplete="family-name" placeholder="Seu sobrenome"></div>
-      <div class="field full"><label for="editAccountEmail">E-mail</label><input id="editAccountEmail" type="email" autocomplete="email" placeholder="seu@email.com"></div>
-      <div class="field"><label for="editNewPassword">Nova senha (opcional)</label><input id="editNewPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Mínimo 6 caracteres"></div>
-      <div class="field"><label for="editConfirmPassword">Confirmar nova senha</label><input id="editConfirmPassword" type="password" autocomplete="new-password" placeholder="Repita a nova senha"></div>
-    </div>
-    <p class="note">Deixe os campos de senha vazios se não quiser alterá-la. A alteração do e-mail pode exigir confirmação enviada pelo Supabase.</p>
-    <div class="actions"><button id="saveAccountChanges" type="button">Salvar alterações</button><button id="cancelAccountChanges" type="button" class="secondary">Cancelar</button></div>
-    <p class="note" id="profileEditStatus" role="status" aria-live="polite"></p>
-  </div>
-</section>
+
 <div class="grid" id="mainTools">
   <section class="card">
    <h2>01 · Configurações salariais</h2>
@@ -721,7 +740,8 @@ function updateProfileLabel(){
   const fullName=accountFullName();
   if(authUser)activeProfileName=fullName;
   $('profileName').value=activeProfileName;
-  $('profileStatus').textContent=authUser?'Perfil ativo: '+activeProfileName+'. E-mail da conta: '+authUser.email+'.':'Entre na sua conta para visualizar e gerenciar seus dados de perfil.';
+  if($('profileEmail'))$('profileEmail').value=authUser?.email||'';
+  $('profileStatus').textContent=authUser?'Conta conectada e sincronização vinculada ao seu perfil.':'Entre na sua conta para visualizar e gerenciar seus dados de perfil.';
   document.title='Horas Extras Pro — '+activeProfileName;
 }
 function openAccountEditor(){
@@ -1026,7 +1046,7 @@ $('rows').onclick=ev=>{
  }
  if(id&&confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')){entries=entries.filter(e=>String(e.id)!==String(id));if(String(editingId)===String(id))resetForm();persist();if(authUser)cloudDeleteEntry(id);msg('Lançamento excluído.')}
 };
-$('switchProfile').addEventListener('click',openAccountEditor);
+$('switchProfile').addEventListener('click',()=>{if($('profileEditor').hidden)openAccountEditor();else closeAccountEditor();});
 $('saveAccountChanges').addEventListener('click',saveAccountChanges);
 $('cancelAccountChanges').addEventListener('click',closeAccountEditor);
 ['salary','divisor','daily','extraRate','nightRate','month','dsrWorkdays','dsrRestdays','dependents','otherDiscounts'].forEach(id=>{
