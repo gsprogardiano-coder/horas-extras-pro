@@ -535,6 +535,19 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
   #reportsCard .report-actions button { font-size:11px!important; }
 }
 
+
+.tutorial-callout{background:#17191f;border:1px solid #6b2631;border-left:4px solid #c83445;border-radius:10px;padding:13px 14px;margin:12px 0;line-height:1.55}
+.tutorial-step{border:1px solid #333842;border-radius:11px;margin:10px 0;background:#111318;overflow:hidden}
+.tutorial-step summary{cursor:pointer;list-style:none;padding:15px 42px 15px 14px;font-weight:750;position:relative;color:#f5f5f5}
+.tutorial-step summary::-webkit-details-marker{display:none}
+.tutorial-step summary:after{content:"＋";position:absolute;right:15px;top:12px;color:#ef5968;font-size:20px}
+.tutorial-step[open] summary:after{content:"−"}
+.tutorial-step ol,.tutorial-step ul,.tutorial-step p{margin:0;padding:0 18px 14px 34px;line-height:1.65;color:#d7d9df}
+.tutorial-step p{padding-left:15px}
+.tutorial-step li{margin:5px 0}
+.tutorial-warning{color:#ffd78a!important;font-size:.94em}
+.tutorial-footer{color:#9ca3af;text-align:center;font-size:.85em;margin-top:16px}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -617,6 +630,7 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
  <button type="button" data-go="reportsCard">Relatórios</button>
  <button type="button" data-go="salaryCalc">Calculadora</button>
  <button type="button" data-go="accountCard">Conta</button>
+ <button type="button" data-go="tutorialCard">Como usar o app</button>
 </div>
   <div class="brand"><img class="logo-img" src="./logo-gardy.png" alt="Logo Gardy VJ"><div>HORAS EXTRAS PRO</div><span class="pill">PESSOAL</span></div>
   <div class="sub">Controle de jornada variável · jornada urbana · pagamento de horas extras</div>
@@ -774,6 +788,115 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
   <p style="margin:0 0 8px">• Horas noturnas são apenas informativas e não acrescentam valor ao pagamento calculado.</p>
   <p class="note">O valor das horas adicionais é exibido separadamente do salário. Faltas não justificadas: estimativa de salário mensal ÷ 30 por dia ausente, mais no máximo um DSR (salário ÷ 30) por semana civil de segunda a domingo com falta não justificada. Faltas justificadas são consideradas abonadas nesta simulação. A aplicação real depende da justificativa aceita, escala, feriados e convenção coletiva; confira com o RH. Outros reflexos legais não estão incluídos.</p>
  </section>
+
+<section class="card" id="tutorialCard" style="margin-top:16px">
+ <h2>08 · Como usar o Gardy Horas Pro</h2>
+ <p class="note">Guia rápido para configurar sua jornada, registrar os dias, consultar resultados e proteger seus dados.</p>
+ <div class="tutorial-callout"><strong>Antes de começar:</strong> entre na sua conta para sincronizar os registros. Configure salário, divisor e jornada antes de interpretar os valores.</div>
+ <details class="tutorial-step" open>
+  <summary>1. Criar conta e entrar</summary>
+  <ol>
+   <li>Abra o Gardy Horas Pro pelo endereço oficial <a href="https://app.gardyhoraspro.com.br" target="_blank" rel="noopener">app.gardyhoraspro.com.br</a>.</li>
+   <li>Escolha criar conta e informe nome, sobrenome, e-mail, senha e confirmação da senha.</li>
+   <li>Se o serviço solicitar confirmação, abra o e-mail recebido e confirme o cadastro.</li>
+   <li>Depois, entre com e-mail e senha. O perfil mostra o nome e o e-mail da conta.</li>
+  </ol>
+ </details>
+ <details class="tutorial-step">
+  <summary>2. Configurar salário e jornada</summary>
+  <ol>
+   <li>Abra <strong>Menu → Marcar ponto</strong> e localize <strong>Configurações salariais</strong>.</li>
+   <li>Informe o salário mensal bruto usado como base para a estimativa.</li>
+   <li>Escolha o divisor mensal aplicável à sua jornada (por exemplo, 220, 200 ou 180, conforme seu contrato/regra).</li>
+   <li>Informe a jornada normal de segunda a sexta. O campo não configura o sábado.</li>
+   <li>O cálculo do app considera sábado com 4 horas normais e domingo com zero horas normais. Horas acima da jornada normal são identificadas como adicionais.</li>
+   <li>Confira o mês de referência e os campos de DSR. Salve/atualize os campos conforme a tela do app.</li>
+  </ol>
+  <p class="tutorial-warning">Não escolha divisor ou jornada por tentativa. Confirme esses dados no contrato, holerite, RH ou convenção coletiva.</p>
+ </details>
+ <details class="tutorial-step">
+  <summary>3. Registrar uma jornada</summary>
+  <ol>
+   <li>Em <strong>Registrar jornada</strong>, selecione a data correta.</li>
+   <li>Escolha o tipo do dia: Trabalho, Folga, Falta justificada ou Falta não justificada.</li>
+   <li>Para Trabalho, informe entrada e saída. Se houve intervalo, marque a opção correspondente e informe início e fim do intervalo.</li>
+   <li>Inclua observação se precisar registrar algum detalhe relevante.</li>
+   <li>Toque em <strong>Adicionar jornada</strong>. Para corrigir um lançamento, use a ação de editar na tabela.</li>
+   <li>Se a jornada atravessou a meia-noite, informe os horários reais; o app aceita saída após meia-noite.</li>
+  </ol>
+  <p class="tutorial-warning">Confira data, entrada, saída e intervalo antes de salvar. O intervalo é descontado do tempo trabalhado quando informado.</p>
+ </details>
+ <details class="tutorial-step">
+  <summary>4. Entender as cores do calendário</summary>
+  <ul>
+   <li><strong>Verde:</strong> dia com trabalho registrado.</li>
+   <li><strong>Azul:</strong> folga registrada.</li>
+   <li><strong>Amarelo:</strong> falta justificada.</li>
+   <li><strong>Vermelho:</strong> falta não justificada.</li>
+  </ul>
+  <p>Toque em um dia do calendário para levar a data ao formulário de jornada.</p>
+ </details>
+ <details class="tutorial-step">
+  <summary>5. Ler o resumo mensal</summary>
+  <p>O resumo apresenta os totais do mês selecionado, como horas trabalhadas, horas adicionais, valor estimado das adicionais e DSR estimado. As horas noturnas são informativas no cálculo atual e não acrescentam valor à estimativa de horas adicionais.</p>
+  <p>O valor de horas adicionais é uma estimativa baseada no salário e divisor informados. Confira sempre o resultado com o holerite e as regras aplicáveis ao seu contrato.</p>
+ </details>
+ <details class="tutorial-step">
+  <summary>6. Consultar o histórico</summary>
+  <ol>
+   <li>Abra <strong>Menu → Histórico</strong>.</li>
+   <li>Use o filtro de ano para localizar os registros.</li>
+   <li>Expanda o ano/mês desejado para consultar as marcações.</li>
+   <li>Selecione um mês para abrir seus lançamentos na tela principal.</li>
+  </ol>
+ </details>
+ <details class="tutorial-step">
+  <summary>7. Gerar relatórios PDF e Excel</summary>
+  <ol>
+   <li>Abra <strong>Menu → Relatórios</strong>.</li>
+   <li>Para PDF mensal ou Excel mensal, selecione o mês desejado.</li>
+   <li>Para o consolidado, escolha todo o histórico ou o ano selecionado.</li>
+   <li>Toque no formato desejado: PDF mensal, PDF consolidado, Excel mensal ou Excel consolidado.</li>
+   <li>Depois de gerar, use o compartilhamento/arquivos do aparelho para guardar ou enviar o documento.</li>
+  </ol>
+ </details>
+ <details class="tutorial-step">
+  <summary>8. Usar o simulador de salário líquido</summary>
+  <p>Abra <strong>Menu → Calculadora</strong>. Informe dependentes e outros descontos quando aplicável. O simulador estima INSS, IRRF, faltas não justificadas e possível perda de DSR conforme os registros do mês.</p>
+  <p class="tutorial-warning">É uma simulação, não substitui o cálculo oficial da folha. O próprio app informa que não inclui descontos não informados, benefícios, pensão, sindicato, adiantamentos ou regras específicas da folha.</p>
+ </details>
+ <details class="tutorial-step">
+  <summary>9. Gerenciar a conta</summary>
+  <ol>
+   <li>No perfil, toque em <strong>Gerenciar minha conta</strong>.</li>
+   <li>Altere nome, sobrenome ou e-mail quando necessário.</li>
+   <li>Para mudar a senha, preencha nova senha e confirmação. Deixe os dois campos vazios se não quiser alterá-la.</li>
+   <li>Toque em salvar. A alteração do e-mail pode exigir confirmação enviada pelo serviço de autenticação.</li>
+   <li>Use <strong>Sair da conta</strong> para encerrar a sessão naquele aparelho.</li>
+  </ol>
+ </details>
+ <details class="tutorial-step">
+  <summary>10. Sincronização e backup</summary>
+  <ul>
+   <li>Com login, os registros são sincronizados com a conta na nuvem.</li>
+   <li>Sem login, os dados ficam apenas no navegador/aparelho em uso.</li>
+   <li>Use <strong>Backup JSON</strong> periodicamente para guardar uma cópia dos dados.</li>
+   <li>Use <strong>Restaurar backup</strong> para importar um arquivo de backup válido. Faça isso com atenção para não substituir dados mais recentes por uma cópia antiga.</li>
+   <li>Ao trocar de aparelho, entre na mesma conta e confira se os registros terminaram de sincronizar.</li>
+  </ul>
+ </details>
+ <details class="tutorial-step">
+  <summary>11. Corrigir um lançamento ou excluir</summary>
+  <ul>
+   <li>Use editar para corrigir data, horários, tipo de dia ou observação.</li>
+   <li>Antes de excluir, confira a data e tenha certeza de que selecionou o lançamento correto.</li>
+   <li>Com login, a exclusão depende da confirmação do Supabase. Se houver mensagem de erro, não considere a exclusão concluída.</li>
+  </ul>
+ </details>
+ <div class="tutorial-callout"><strong>Dica de segurança:</strong> não compartilhe sua senha. Mantenha seu e-mail atualizado e faça backups regulares. O Gardy Horas Pro é uma ferramenta de controle e estimativa; valide valores trabalhistas com o RH, sindicato ou profissional responsável.</div>
+ <p class="tutorial-footer">Manual de uso do Gardy Horas Pro · Consulte esta seção sempre que precisar.</p>
+</section>
+
 </main>
 <footer>Horas Extras Pro · Gardy · Gratuito · Não substitui espelho de ponto oficial nem orientação trabalhista.</footer>
 <script>
