@@ -551,6 +551,57 @@ input, select, textarea { width:100%; min-width:0; max-width:100%; }
 
 /* Registro de jornada recolhido até o usuário escolher uma data ou abrir pelo menu */
 #entryCard.is-collapsed { display:none !important; }
+
+
+/* GARDY UX PASS 1 — conforto de leitura, toque e navegação mobile.
+   Apenas apresentação/acessibilidade: não altera cálculos, dados ou sincronização. */
+:root{
+  scroll-behavior:smooth;
+  -webkit-tap-highlight-color:transparent;
+}
+html{scroll-padding-top:82px}
+button,input,select,textarea{touch-action:manipulation}
+button{
+  min-height:46px;
+  line-height:1.25;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+.calday:focus-visible{
+  outline:3px solid #ff7582!important;
+  outline-offset:3px!important;
+}
+input,select,textarea{
+  min-height:48px;
+  font-size:16px;
+}
+.card{scroll-margin-top:82px}
+.note{line-height:1.6}
+.actions{align-items:stretch}
+.actions button{min-width:0}
+.calday{cursor:pointer;user-select:none;-webkit-user-select:none}
+.calday:active{transform:scale(.97)}
+.gardy-nav .nav-toggle{min-height:46px;padding:10px 16px}
+.gardy-nav-links button{min-height:48px}
+.tutorial-step summary{min-height:48px;display:flex;align-items:center}
+@media(max-width:600px){
+  html{scroll-padding-top:70px}
+  main{padding-bottom:calc(34px + env(safe-area-inset-bottom))}
+  .card{padding:15px}
+  .actions{gap:9px}
+  .actions button{flex:1 1 135px;min-height:48px}
+  #saveBtn{flex:1.35 1 160px}
+  .calday{min-height:clamp(48px,12vw,64px)}
+  .gardy-nav{padding-top:calc(8px + env(safe-area-inset-top))!important}
+}
+@media(prefers-reduced-motion:reduce){
+  :root{scroll-behavior:auto}
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
