@@ -251,11 +251,12 @@ footer{color:#969da8}
 .profile-top-heading h2{margin:0;color:#fff;font-size:16px}
 .profile-top-heading h2:after{display:none}
 .profile-active-mark{font-size:10px;font-weight:900;letter-spacing:.12em;color:#ff8995;border:1px solid #8f2534;border-radius:99px;padding:4px 9px}
-.profile-top-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;align-items:end;gap:11px}
+.profile-top-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:11px}
 .profile-top-fields .field{min-width:0}
-.profile-top-fields input{height:44px;font-size:14px}
-.profile-manage-wrap{display:flex;align-items:end}
-.profile-manage-wrap button{height:44px;white-space:nowrap;padding:0 16px}
+.profile-readonly-value{min-height:44px;display:flex;align-items:center;padding:10px 14px;border:1px solid #50545e;border-radius:12px;background:linear-gradient(145deg,#090a0e,#111217);color:#f1f2f5;font-size:14px;font-weight:650;overflow-wrap:anywhere;user-select:text}
+.profile-top-fields label{display:block;margin-bottom:7px}
+.profile-manage-wrap{display:flex;align-items:end;grid-column:1/-1}
+.profile-manage-wrap button{height:44px;width:100%;white-space:nowrap;padding:0 16px}
 .profile-top-card .note{margin:8px 0 0;font-size:12px}
 .profile-top-card .profile-editor{margin-top:13px}
 @media(max-width:760px){.profile-top-card{margin:0 0 14px;padding:13px}.profile-top-fields{grid-template-columns:1fr 1fr}.profile-manage-wrap{grid-column:1/-1}.profile-manage-wrap button{width:100%}}
@@ -336,8 +337,8 @@ footer{color:#969da8}
  <section class="card profile-top-card" id="profileCard">
   <div class="profile-top-heading"><h2>Perfil do funcionário</h2><span class="profile-active-mark">CONTA</span></div>
   <div class="profile-top-fields">
-   <div class="field"><label for="profileName">Nome completo</label><input id="profileName" type="text" maxlength="120" placeholder="Seu nome e sobrenome" readonly></div>
-   <div class="field"><label for="profileEmail">E-mail</label><input id="profileEmail" type="email" placeholder="E-mail da conta" readonly></div>
+   <div class="field"><label>Nome completo</label><div id="profileName" class="profile-readonly-value">—</div></div>
+   <div class="field"><label>E-mail</label><div id="profileEmail" class="profile-readonly-value">—</div></div>
    <div class="profile-manage-wrap"><button id="switchProfile" type="button">Gerenciar minha conta</button></div>
   </div>
   <p class="note" id="profileStatus">Entre na sua conta para visualizar e gerenciar seus dados de perfil.</p>
@@ -582,7 +583,7 @@ async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
  if(entries.length)await cloudSaveEntries(true);
  localStorage.setItem(dataKey(),JSON.stringify(entries));
  const sr=settingsRows?.[0];if(sr){const saved=sr.settings_data||{};if(sr.salary!==undefined)saved.salary=String(sr.salary);if(sr.weekday_hours!==undefined)saved.daily=String(sr.weekday_hours);Object.entries(saved).forEach(([k,v])=>{if($(k)&&v!==undefined)$(k).value=v});saveSettings();}
- localStorage.setItem(PROFILE_NAME_KEY,authUser.user_metadata?.full_name||authUser.email||activeProfileName);activeProfileName=localStorage.getItem(PROFILE_NAME_KEY);$('profileName').value=activeProfileName;updateProfileLabel();
+ localStorage.setItem(PROFILE_NAME_KEY,authUser.user_metadata?.full_name||authUser.email||activeProfileName);activeProfileName=localStorage.getItem(PROFILE_NAME_KEY);$('profileName').textContent=activeProfileName;updateProfileLabel();
  // Persiste os dados já recebidos/enviados usando a chave do perfil vinculado à conta.
  // Antes, o app mudava o nome do perfil e chamava load() sem copiar os registros
  // para a nova chave local, fazendo a tela parecer vazia mesmo após a sincronização.
@@ -739,8 +740,8 @@ function accountFullName(user=authUser){
 function updateProfileLabel(){
   const fullName=accountFullName();
   if(authUser)activeProfileName=fullName;
-  $('profileName').value=activeProfileName;
-  if($('profileEmail'))$('profileEmail').value=authUser?.email||'';
+  $('profileName').textContent=activeProfileName;
+  if($('profileEmail'))$('profileEmail').textContent=authUser?.email||'Não conectado';
   $('profileStatus').textContent=authUser?'Conta conectada e sincronização vinculada ao seu perfil.':'Entre na sua conta para visualizar e gerenciar seus dados de perfil.';
   document.title='Horas Extras Pro — '+activeProfileName;
 }
@@ -767,6 +768,7 @@ async function saveAccountChanges(){
   if(!email||!$('editAccountEmail').checkValidity()){$('profileEditStatus').textContent='Informe um e-mail válido.';return;}
   if(password||confirmPassword){if(password.length<6){$('profileEditStatus').textContent='A nova senha precisa ter pelo menos 6 caracteres.';return;}if(password!==confirmPassword){$('profileEditStatus').textContent='As senhas não conferem.';return;}}
   const oldName=activeProfileName;
+  const oldEmail=authUser.email;
   const fullName=(first+' '+last).replace(/\s+/g,' ').trim();
   const attrs={data:{first_name:first,last_name:last,full_name:fullName,name:fullName}};
   if(email!==authUser.email)attrs.email=email;
@@ -784,10 +786,10 @@ async function saveAccountChanges(){
     if(oldData&&!localStorage.getItem(dataKey()))localStorage.setItem(dataKey(),oldData);
     if(oldSettings&&!localStorage.getItem(settingsKey()))localStorage.setItem(settingsKey(),oldSettings);
     updateProfileLabel();
-    $('profileEditStatus').textContent=email!==authUser.email?'Dados atualizados. Confirme a alteração do e-mail na mensagem enviada pelo Supabase.':'Perfil atualizado com sucesso.';
-    if(email!==authUser.email)$('profileEditStatus').textContent='Nome e senha atualizados. Confirme o novo e-mail na mensagem enviada pelo Supabase.';
+    $('profileEditStatus').textContent=email!==oldEmail?'Nome e senha atualizados. Confirme o novo e-mail na mensagem enviada pelo Supabase.':'Perfil atualizado com sucesso.';
     $('editNewPassword').value='';$('editConfirmPassword').value='';
     if(authUser)cloudSaveSettings();
+    closeAccountEditor();
   }catch(e){$('profileEditStatus').textContent='Não foi possível atualizar a conta: '+(e.message||e);}
   finally{btn.disabled=false;btn.textContent='Salvar alterações';}
 }
