@@ -239,8 +239,9 @@ footer{color:#969da8}
 #historyReportPrint{display:none}
 @media(max-width:600px){.gardy-nav{overflow:visible}.history-month{align-items:flex-start}.history-month button{white-space:nowrap}}
 @media print{
- body.print-history>*:not(#historyReportPrint){display:none!important}
- body.print-history #historyReportPrint{display:block!important;position:absolute;inset:0;background:white;color:#111;padding:20px;font:11px Arial,sans-serif}
+ body.print-history *{visibility:hidden!important}
+ body.print-history #historyReportPrint,body.print-history #historyReportPrint *{visibility:visible!important}
+ body.print-history #historyReportPrint{display:block!important;position:fixed;inset:0;z-index:999999;overflow:visible;background:white;color:#111;padding:20px;font:11px Arial,sans-serif}
  #historyReportPrint h1,#historyReportPrint h2{color:#111}
  #historyReportPrint table{width:100%;border-collapse:collapse;white-space:normal;color:#111;font-size:10px}
  #historyReportPrint th,#historyReportPrint td{color:#111;border:1px solid #bbb;padding:5px;text-align:left}
@@ -681,6 +682,15 @@ input,select,textarea{
 .hero>div{min-width:0}
 .hero strong{display:block}
 @media(max-width:560px){.hero{grid-template-columns:1fr 1fr}.hero>div:last-child{grid-column:1/-1}.section-tabs{gap:8px;padding:10px 12px}.section-tabs button{font-size:12px;padding:9px 12px}}
+
+.report-preview{margin-top:14px;padding:14px;border:1px solid var(--border,#444);border-radius:12px;max-height:520px;overflow:auto;background:#fff;color:#171717}
+.report-preview .report-brand{display:flex;justify-content:space-between;gap:12px;border-bottom:2px solid #222;padding-bottom:10px}
+.report-preview .report-brand h1{font-size:18px;margin:0}
+.report-preview .report-summary{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.report-preview .report-summary>div{border:1px solid #ddd;padding:8px;min-width:100px;flex:1}
+.report-preview table{width:100%;border-collapse:collapse;font-size:11px;white-space:normal}
+.report-preview th,.report-preview td{border:1px solid #ddd;padding:5px;text-align:left}
+@media print{.report-preview{display:none!important}}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -983,7 +993,8 @@ input,select,textarea{
    <button type="button" id="reportMonthXls">Excel mensal</button>
    <button type="button" id="reportAllXls" class="secondary">Excel consolidado</button>
   </div>
-  <p class="note" id="reportStatus" role="status"></p>
+  <p class="note" id="reportStatus" role="status">Selecione o período e gere uma prévia antes de exportar.</p>
+  <div id="reportPreview" class="report-preview" aria-live="polite"><p class="note">A prévia do relatório aparecerá aqui.</p></div>
  </section>
  <div id="historyReportPrint" aria-hidden="true"></div>
 
@@ -1705,7 +1716,13 @@ function renderCalendar(list){
   const key=`${year}-${pad(monthNum)}-${pad(day)}`;
   const d=document.createElement('button');d.type='button';d.className='calday'+(byDate.has(key)?' has':offDate.has(key)?' off':justifiedDate.has(key)?' absence-justified':unjustifiedDate.has(key)?' absence-unjustified':'')+(key===`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`?' today':'');
   d.innerHTML=`${day}${byDate.has(key)?'<small>Trabalho</small>':offDate.has(key)?'<small>Folga</small>':justifiedDate.has(key)?'<small>Falta just.</small>':unjustifiedDate.has(key)?'<small>Falta injust.</small>':''}`;
-  d.setAttribute('aria-label',`${day} de ${new Date(year,monthNum-1,1).toLocaleDateString('pt-BR',{month:'long'})}`);if(key===$('date').value)d.classList.add('selected-day');d.addEventListener('click',()=>{document.querySelectorAll('#calendar .selected-day').forEach(x=>x.classList.remove('selected-day'));d.classList.add('selected-day');$('calendarHelp').textContent=`Data selecionada: ${day}/${pad(monthNum)}/${year}. O formulário de jornada será aberto.`;openEntryForm(key);});
+  d.setAttribute('aria-label',`${day} de ${new Date(year,monthNum-1,1).toLocaleDateString('pt-BR',{month:'long'})}`);if(key===$('date').value)d.classList.add('selected-day');d.addEventListener('click',()=>{
+   document.querySelectorAll('#calendar .selected-day').forEach(x=>x.classList.remove('selected-day'));
+   d.classList.add('selected-day');
+   $('calendarHelp').textContent=`Data selecionada: ${day}/${pad(monthNum)}/${year}. O formulário de jornada será aberto.`;
+   if(typeof activateSectionTab==='function')activateSectionTab('entryCard',false);
+   openEntryForm(key);
+  });
   cal.appendChild(d);
  }
  $('calendarTitle').textContent=new Date(year,monthNum-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
@@ -2069,10 +2086,31 @@ function buildReportHtml(list,title){
  const m=reportMetrics(list);const rows=list.map(e=>{const c=calc(e),type=({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho';return `<tr><td>${e.date.split('-').reverse().join('/')}</td><td>${type}</td><td>${e.start||'—'}</td><td>${e.end||'—'}</td><td>${e.hasBreak?(e.breakStart||'')+'–'+(e.breakEnd||''):'—'}</td><td>${fmtHours(c.worked)}</td><td>${fmtHours(Math.round((Number(c.extra)||0)*60))}</td><td>${fmtHours(c.night)}</td><td>${money(c.total)}</td><td>${String(e.obs||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</td></tr>`}).join('');
  return `<div class="report-brand"><div><h1>GARDY HORAS PRO</h1><p>CONTROLE DE JORNADA · RELATÓRIO DE HORAS</p></div><strong>${title}</strong></div><p class="report-meta"><b>Funcionário:</b> ${String(activeProfileName||'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))} <span>·</span> <b>Emitido em:</b> ${new Date().toLocaleDateString('pt-BR')}</p><div class="report-summary"><div><b>Marcações</b><strong>${m.days}</strong></div><div><b>Horas trabalhadas</b><strong>${fmtHours(m.worked)}</strong></div><div><b>Horas adicionais</b><strong>${fmtHours(m.extra)}</strong></div><div><b>Valor adicional</b><strong>${money(m.value)}</strong></div><div><b>DSR estimado</b><strong>${money(m.dsr)}</strong></div><div><b>Total estimado</b><strong>${money(m.total)}</strong></div><div><b>Horas noturnas</b><strong>${fmtHours(m.night)}</strong></div><div><b>Folgas</b><strong>${m.off}</strong></div><div><b>Faltas justificadas</b><strong>${m.justified}</strong></div><div><b>Faltas não justificadas</b><strong>${m.unjustified}</strong></div></div><h3 class="report-section-title">Detalhamento das marcações</h3><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Adicionais</th><th>Noturnas</th><th>Valor adicional</th><th>Observação</th></tr></thead><tbody>${rows||'<tr><td colspan="10">Nenhum lançamento neste período.</td></tr>'}</tbody></table><p class="report-footnote">Valores estimados conforme salário, divisor e parâmetros de DSR atualmente configurados. Se essas configurações mudaram ao longo do período, os valores históricos podem não refletir os parâmetros vigentes em cada data. O DSR é apresentado separadamente e não está somado ao valor das horas adicionais.</p>`;
 }
-function printHistory(scope){const month=$('reportMonth').value||$('month').value;const list=reportEntries(scope,month);$('historyReportPrint').innerHTML=buildReportHtml(list,reportTitle(scope,month));document.body.classList.add('print-history');window.print();setTimeout(()=>document.body.classList.remove('print-history'),700);$('reportStatus').textContent=`Relatório preparado: ${list.length} lançamento(s). Na janela de impressão, escolha Salvar como PDF.`;}
+function printHistory(scope){
+ const month=$('reportMonth').value||$('month').value;
+ if(!month){$('reportStatus').textContent='Selecione um mês para gerar o relatório.';return;}
+ const list=reportEntries(scope,month);
+ const html=buildReportHtml(list,reportTitle(scope,month));
+ $('reportPreview').innerHTML=html;
+ $('historyReportPrint').innerHTML=html;
+ if(!list.length){
+  $('reportStatus').textContent='Nenhum lançamento encontrado no período selecionado. Confira o mês ou escolha todo o histórico.';
+  return;
+ }
+ $('reportStatus').textContent=`Relatório com ${list.length} lançamento(s) preparado. Na tela de impressão, escolha “Salvar como PDF”.`;
+ document.body.classList.add('print-history');
+ requestAnimationFrame(()=>window.print());
+ const cleanup=()=>{document.body.classList.remove('print-history');};
+ window.addEventListener('afterprint',cleanup,{once:true});
+ setTimeout(cleanup,5000);
+}
 function excelEscape(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function exportExcel(scope){
- const month=$('reportMonth').value||$('month').value,list=reportEntries(scope,month),m=reportMetrics(list),title=reportTitle(scope,month);
+ const month=$('reportMonth').value||$('month').value;
+ if(!month){$('reportStatus').textContent='Selecione um mês para exportar.';return;}
+ const list=reportEntries(scope,month),m=reportMetrics(list),title=reportTitle(scope,month);
+ $('reportPreview').innerHTML=buildReportHtml(list,title);
+ if(!list.length){$('reportStatus').textContent='Nenhum lançamento encontrado no período selecionado. O arquivo será gerado com o resumo vazio.';}
  const headers=['Data','Dia da semana','Tipo','Entrada','Saída','Intervalo','Trabalhadas (min)','Adicionais (h)','Noturnas (min)','Valor adicional (R$)','Observação'];
  const data=list.map(e=>{const c=calc(e),weekday=e.date?new Date(e.date+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long'}):'';return [e.date,weekday,({work:'Trabalho',off:'Folga',absence_justified:'Falta justificada',absence_unjustified:'Falta não justificada'})[e.dayType]||'Trabalho',e.start||'',e.end||'',e.hasBreak?(e.breakStart||'')+'-'+(e.breakEnd||''):'',Math.round(c.worked),Number(c.extra||0).toFixed(2),Math.round(c.night),Number((c.extraVal??c.total)||0).toFixed(2),e.obs||''];});
  const sheet=(name,rows)=>`<Worksheet ss:Name="${name}"><Table>${rows.map(row=>'<Row>'+row.map(v=>`<Cell><Data ss:Type="${typeof v==='number'?'Number':'String'}">${excelEscape(v)}</Data></Cell>`).join('')+'</Row>').join('')}</Table></Worksheet>`;
@@ -2188,7 +2226,7 @@ $('reminderEnabled').addEventListener('change',e=>{localStorage.setItem(dataKey(
 $('checkRemindersBtn').addEventListener('click',checkInAppReminders);
 $('savePaymentBtn').addEventListener('click',()=>{const k=$('month').value||'',v=$('paymentReceived').value;if(!k||v===''||!Number.isFinite(Number(v))||Number(v)<0){$('paymentMessage').textContent='Informe um valor válido e selecione o mês.';return;}localStorage.setItem(paymentStorageKey(k),String(Number(v)));updatePaymentComparison();$('paymentMessage').textContent='Conferência salva neste aparelho.';});
 $('clearPaymentBtn').addEventListener('click',()=>{const k=$('month').value||'';if(k)localStorage.removeItem(paymentStorageKey(k));$('paymentReceived').value='';updatePaymentComparison();});
-$('month').addEventListener('change',()=>{updatePaymentComparison();checkInAppReminders();});
+$('month').addEventListener('change',()=>{if($('reportMonth'))$('reportMonth').value=$('month').value;updatePaymentComparison();checkInAppReminders();});
 $('syncRetryBtn').addEventListener('click',async()=>{if(!navigator.onLine){setSyncStatus('pending','Sem internet. Os dados continuam salvos neste aparelho.',true);return;}$('syncRetryBtn').disabled=true;try{await syncCloud();setSyncStatus('ok','Sincronização concluída.');}catch(e){setSyncStatus('error','Falha ao sincronizar: '+(e.message||e),true);}finally{$('syncRetryBtn').disabled=false;}});
 window.addEventListener('online',()=>{if(authUser){setSyncStatus('pending','Conexão restabelecida. Sincronizando…');syncCloud().then(()=>setSyncStatus('ok','Sincronização concluída após reconexão.')).catch(e=>setSyncStatus('error','Falha após reconexão: '+(e.message||e),true));}});
 window.addEventListener('offline',()=>setSyncStatus('local','Sem conexão. Seus dados continuam salvos neste aparelho; a sincronização será tentada quando a internet voltar.',!!authUser));
@@ -2213,7 +2251,10 @@ function activateSectionTab(target,scroll=true){
   const active=btn.dataset.tab===valid;btn.classList.toggle('active',active);btn.setAttribute('aria-selected',active?'true':'false');
  });
  localStorage.setItem('gardy_active_section_tab',valid);
- if(scroll){const targetEl=$(valid);if(targetEl)targetEl.scrollIntoView({behavior:'smooth',block:'start'});}
+ if(scroll){
+  const targetEl=valid==='accountCard'?$('profileCard'):$(valid);
+  if(targetEl)targetEl.scrollIntoView({behavior:'smooth',block:'start'});
+ }
 }
 document.querySelectorAll('#sectionTabs [data-tab]').forEach(btn=>btn.addEventListener('click',()=>activateSectionTab(btn.dataset.tab)));
 document.querySelectorAll('.gardy-nav-links [data-go]').forEach(btn=>btn.addEventListener('click',()=>{
