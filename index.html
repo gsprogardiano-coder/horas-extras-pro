@@ -602,6 +602,19 @@ input,select,textarea{
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 
+
+/* Calendário: navegação mensal e estado de data selecionada */
+.calendar-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.calendar-toolbar strong{min-width:145px;text-align:center;text-transform:capitalize}
+.calendar-toolbar button{min-width:44px;padding:9px 13px}
+.calday.selected-day{outline:3px solid var(--navy)!important;outline-offset:2px;box-shadow:0 0 0 3px rgba(105,215,176,.35)}
+#calendarHelp{min-height:24px;margin-top:12px}
+@media(max-width:600px){
+ .calendar-toolbar{gap:6px}
+ .calendar-toolbar .pill{flex-basis:100%;white-space:normal}
+ .calendar-toolbar strong{flex:1;min-width:115px}
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -772,9 +785,16 @@ input,select,textarea{
  </div>
  <section class="card" style="margin-top:16px" id="calendarCard">
   <h2>03 · Calendário mensal</h2>
-  <div class="monthrow"><strong id="calendarTitle">Calendário</strong><span class="right"></span><span class="pill">Verde = trabalho · azul = folga · amarelo = falta justificada · vermelho = falta não justificada</span></div>
+  <div class="monthrow calendar-toolbar">
+   <button type="button" class="secondary" id="calendarPrev" aria-label="Mês anterior">‹</button>
+   <strong id="calendarTitle">Calendário</strong>
+   <button type="button" class="secondary" id="calendarNext" aria-label="Próximo mês">›</button>
+   <button type="button" class="secondary" id="calendarToday">Hoje</button>
+   <span class="right"></span>
+   <span class="pill">Verde = trabalho · azul = folga · amarelo = falta justificada · vermelho = falta não justificada</span>
+  </div>
   <div class="calendar" id="calendar"></div>
-  <p class="note">O calendário mostra os dias com lançamentos. Toque em um dia para preencher a data no formulário.</p>
+  <p class="note" id="calendarHelp" role="status">Navegue entre os meses ou toque em uma data para registrar uma jornada. A data escolhida abre o formulário.</p>
  </section>
  <section class="card" style="margin-top:16px" id="summaryCard">
   <h2>04 · Resumo do mês</h2>
@@ -1430,7 +1450,7 @@ function renderCalendar(list){
   const key=`${year}-${pad(monthNum)}-${pad(day)}`;
   const d=document.createElement('button');d.type='button';d.className='calday'+(byDate.has(key)?' has':offDate.has(key)?' off':justifiedDate.has(key)?' absence-justified':unjustifiedDate.has(key)?' absence-unjustified':'')+(key===`${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`?' today':'');
   d.innerHTML=`${day}${byDate.has(key)?'<small>Trabalho</small>':offDate.has(key)?'<small>Folga</small>':justifiedDate.has(key)?'<small>Falta just.</small>':unjustifiedDate.has(key)?'<small>Falta injust.</small>':''}`;
-  d.addEventListener('click',()=>openEntryForm(key));
+  d.setAttribute('aria-label',`${day} de ${new Date(year,monthNum-1,1).toLocaleDateString('pt-BR',{month:'long'})}`);if(key===$('date').value)d.classList.add('selected-day');d.addEventListener('click',()=>{document.querySelectorAll('#calendar .selected-day').forEach(x=>x.classList.remove('selected-day'));d.classList.add('selected-day');$('calendarHelp').textContent=`Data selecionada: ${day}/${pad(monthNum)}/${year}. O formulário de jornada será aberto.`;openEntryForm(key);});
   cal.appendChild(d);
  }
  $('calendarTitle').textContent=new Date(year,monthNum-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
@@ -1804,4 +1824,38 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 </script>
+
+<script>
+(function(){
+ function shiftMonth(delta){
+  const input=document.getElementById('month');
+  if(!input||!input.value)return;
+  const parts=input.value.split('-').map(Number);
+  const date=new Date(parts[0],parts[1]-1+delta,1);
+  input.value=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+  if(typeof window.render==='function')window.render();
+  const reportMonth=document.getElementById('reportMonth');
+  if(reportMonth)reportMonth.value=input.value;
+ }
+ document.addEventListener('DOMContentLoaded',function(){
+  const prev=document.getElementById('calendarPrev');
+  const next=document.getElementById('calendarNext');
+  const todayBtn=document.getElementById('calendarToday');
+  if(prev)prev.addEventListener('click',()=>shiftMonth(-1));
+  if(next)next.addEventListener('click',()=>shiftMonth(1));
+  if(todayBtn)todayBtn.addEventListener('click',()=>{
+   const now=new Date(),month=document.getElementById('month');
+   if(month)month.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+   const reportMonth=document.getElementById('reportMonth');
+   if(reportMonth&&month)reportMonth.value=month.value;
+   if(typeof window.render==='function')window.render();
+   const date=document.getElementById('date');
+   if(date)date.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+   const help=document.getElementById('calendarHelp');
+   if(help)help.textContent='Mês atual selecionado. Toque em um dia para abrir o registro.';
+  });
+ });
+})();
+</script>
+
 </body></html>
