@@ -734,7 +734,7 @@ input,select,textarea{
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<!-- Gerador QR Pix incorporado ao próprio app: funciona sem CDN. -->
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./logo-gardy.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1191,6 +1191,113 @@ function gateMessage(t,bad=false){const el=$('gateStatus');if(el){el.textContent
 function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){activeProfileName=accountFullName(authUser);localStorage.setItem(PROFILE_NAME_KEY,activeProfileName);updateProfileLabel();authMessage('Conta conectada. Verificando sincronização...');setSyncStatus('pending','Conta conectada. Verificando sincronização…');gateMessage('Acesso autorizado.');} }
 function crc16(str){let crc=0xFFFF;for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
 function tlv(id,value){const v=String(value);return id+String(v.length).padStart(2,'0')+v}
+
+/* GERADOR QR PIX OFFLINE — QR Code Model 2, versão 8-L.
+   Implementação local para payload Pix EMV ASCII; não depende de CDN. */
+function gardyQrGfMul(x,y){
+ let z=0;
+ for(let i=0;i<8;i++){if(y&1)z^=x;const hi=x&0x80;x=(x<<1)&255;if(hi)x^=0x1d;y>>=1;}
+ return z;
+}
+function gardyQrRs(data,degree){
+ let gen=[1],root=1;
+ for(let i=0;i<degree;i++){
+  const next=new Array(gen.length+1).fill(0);
+  for(let j=0;j<gen.length;j++){next[j]^=gen[j];next[j+1]^=gardyQrGfMul(gen[j],root);}
+  gen=next;root=gardyQrGfMul(root,2);
+ }
+ const out=data.concat(new Array(degree).fill(0));
+ for(let i=0;i<data.length;i++){const factor=out[i];if(factor)for(let j=0;j<gen.length;j++)out[i+j]^=gardyQrGfMul(gen[j],factor);}
+ return out.slice(data.length);
+}
+function gardyQrMatrix(text){
+ const bytes=Array.from(new TextEncoder().encode(String(text)));
+ if(bytes.some(b=>b>127))throw new Error('O código Pix contém caracteres não ASCII.');
+ if(bytes.length>192)throw new Error('Código Pix maior que a capacidade do QR offline.');
+ const dataBits=[];
+ const put=(value,len)=>{for(let i=len-1;i>=0;i--)dataBits.push((value>>>i)&1);};
+ put(4,4);put(bytes.length,8);bytes.forEach(b=>put(b,8));
+ const capacity=194*8;
+ for(let i=0;i<Math.min(4,capacity-dataBits.length);i++)dataBits.push(0);
+ while(dataBits.length%8)dataBits.push(0);
+ const data=[];
+ for(let i=0;i<dataBits.length;i+=8){let v=0;for(let j=0;j<8;j++)v=(v<<1)|dataBits[i+j];data.push(v);}
+ for(let pad=0;data.length<194;pad++)data.push(pad%2?0x11:0xec);
+ const blocks=[data.slice(0,97),data.slice(97,194)];
+ const ecc=blocks.map(b=>gardyQrRs(b,24));
+ const codewords=[];
+ for(let i=0;i<97;i++)for(const b of blocks)codewords.push(b[i]);
+ for(let i=0;i<24;i++)for(const b of ecc)codewords.push(b[i]);
+ const n=49, m=Array.from({length:n},()=>Array(n).fill(null));
+ const set=(r,c,v)=>{if(r>=0&&r<n&&c>=0&&c<n)m[r][c]=!!v;};
+ function finder(r0,c0){
+  for(let r=-1;r<=7;r++)for(let c=-1;c<=7;c++){
+   const rr=r0+r,cc=c0+c;if(rr<0||rr>=n||cc<0||cc>=n)continue;
+   set(rr,cc,r>=0&&r<=6&&c>=0&&c<=6&&(r===0||r===6||c===0||c===6||(r>=2&&r<=4&&c>=2&&c<=4)));
+  }
+ }
+ finder(0,0);finder(n-7,0);finder(0,n-7);
+ // Alignment patterns for version 8: centers 6, 24, 42.
+ for(const r of [6,24,42])for(const c of [6,24,42]){
+  if(m[r][c]!==null)continue;
+  for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)
+   set(r+dr,c+dc,Math.max(Math.abs(dr),Math.abs(dc))!==1);
+ }
+ for(let i=8;i<n-8;i++){if(m[i][6]===null)set(i,6,i%2===0);if(m[6][i]===null)set(6,i,i%2===0);}
+ // Reserve format information locations.
+ for(let i=0;i<15;i++){
+  if(i<6)set(i,8,false);else if(i<8)set(i+1,8,false);else set(n-15+i,8,false);
+  if(i<8)set(8,n-i-1,false);else if(i<9)set(8,15-i,false);else set(8,15-i-1,false);
+ }
+ set(n-8,8,true);
+ // Version information (required for QR versions 7 and above).
+ let version=8, versionRem=version;
+ for(let i=0;i<12;i++)versionRem=(versionRem<<1)^(((versionRem>>>11)&1)*0x1f25);
+ const versionBits=(version<<12)|versionRem;
+ for(let i=0;i<18;i++){
+  const v=(versionBits>>>i)&1;
+  const a=n-11+(i%3),b=Math.floor(i/3);
+  set(b,a,v);set(a,b,v);
+ }
+ // Place codeword bits in standard two-column zig-zag.
+ let bit=0,row=n-1,dir=-1;
+ for(let col=n-1;col>0;col-=2){
+  if(col===6)col--;
+  while(true){
+   for(let j=0;j<2;j++){
+    const c=col-j;
+    if(m[row][c]===null){
+     const raw=bit<codewords.length*8?((codewords[Math.floor(bit/8)]>>(7-(bit%8)))&1):0;
+     set(row,c,Boolean(raw)^((row+c)%2===0));bit++;
+    }
+   }
+   row+=dir;
+   if(row<0||row>=n){row-=dir;dir=-dir;break;}
+  }
+ }
+ // Format: error correction L + mask 0; BCH polynomial 0x537, XOR mask 0x5412.
+ let format=1<<3, rem=format<<10;
+ for(let i=14;i>=10;i--)if((rem>>>i)&1)rem^=0x537<<(i-10);
+ const formatBits=((format<<10)|rem)^0x5412;
+ for(let i=0;i<15;i++){
+  const v=(formatBits>>>i)&1;
+  if(i<6)set(i,8,v);else if(i<8)set(i+1,8,v);else set(n-15+i,8,v);
+  if(i<8)set(8,n-i-1,v);else if(i<9)set(8,15-i,v);else set(8,15-i-1,v);
+ }
+ set(n-8,8,true);
+ return m;
+}
+function gardyDrawPixQr(canvas,payload){
+ const matrix=gardyQrMatrix(payload),ctx=canvas.getContext('2d');
+ const quiet=4,modules=matrix.length+quiet*2,size=228,scale=size/modules;
+ canvas.width=size;canvas.height=size;
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);
+ ctx.fillStyle='#000';
+ for(let r=0;r<matrix.length;r++)for(let c=0;c<matrix.length;c++)if(matrix[r][c])
+  ctx.fillRect(Math.round((c+quiet)*scale),Math.round((r+quiet)*scale),
+   Math.ceil(scale),Math.ceil(scale));
+}
+
 function makePixPayload(amount){
  const mai=tlv('00','br.gov.bcb.pix')+tlv('01',PIX_KEY);
  let payload=tlv('00','01')+tlv('26',mai)+tlv('52','0000')+tlv('53','986');
@@ -1199,7 +1306,7 @@ function makePixPayload(amount){
  return payload+crc16(payload);
 }
 $('pixAmount').addEventListener('change',()=>{$('pixCustomWrap').hidden=$('pixAmount').value!=='0';$('pixQrWrap').style.display='none';});
-$('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}if(!window.QRCode){pixMessage('Gerador de QR indisponível. Você ainda pode copiar a chave Pix.',true);return}const payload=makePixPayload(amount);await QRCode.toCanvas($('pixQr'),payload,{width:220,margin:1,errorCorrectionLevel:'M'});$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
+$('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}const payload=makePixPayload(amount);gardyDrawPixQr($('pixQr'),payload);$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
 $('pixCopyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(PIX_KEY);pixMessage('Chave Pix copiada.');}catch(e){pixMessage('Não foi possível copiar automaticamente. Chave: '+PIX_KEY,true)}});
 $('pixCopyPayloadBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('pixCopyPayloadBtn').dataset.payload||'');pixMessage('Código Pix copiado.');}catch(e){pixMessage('Não foi possível copiar o código.',true)}});
 async function cloudSaveSettings(){
