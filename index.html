@@ -673,14 +673,14 @@ input,select,textarea{
 @media(max-width:520px){.integrity-grid{grid-template-columns:1fr 1fr}.integrity-grid>div:last-child{grid-column:1/-1}}
 .checkline{display:flex;align-items:center;gap:9px;font-weight:600}.checkline input{width:20px;height:20px}#paymentExpected,#paymentDifference{display:block;font-size:1.15rem}
 /* Navegação por abas: perfil fixo, apenas uma seção de trabalho aberta */
-.section-tabs{display:flex;gap:8px;overflow-x:auto;white-space:nowrap;padding:10px 16px;margin:0 auto 14px;max-width:1200px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
-.section-tabs button{flex:0 0 auto;border:1px solid var(--border,#444);border-radius:999px;background:var(--surface,#202027);color:var(--text,#fff);padding:10px 15px;font-size:13px;font-weight:750}
+.section-tabs{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:10px 12px;overflow:visible;white-space:normal;padding:12px 16px;margin:0 auto 14px;max-width:1200px;scrollbar-width:none}
+.section-tabs button{flex:0 0 auto;max-width:100%;border:1px solid var(--border,#444);border-radius:999px;background:var(--surface,#202027);color:var(--text,#fff);padding:10px 15px;font-size:13px;line-height:1.25;font-weight:750;white-space:normal;text-align:center}
 .section-tabs button.active{background:var(--accent,#e51d3b);border-color:var(--accent,#e51d3b);color:#fff}
 .section-tabs button:focus-visible{outline:3px solid var(--accent,#e51d3b);outline-offset:2px}
 .hero{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:center}
 .hero>div{min-width:0}
 .hero strong{display:block}
-@media(max-width:560px){.hero{grid-template-columns:1fr 1fr}.hero>div:last-child{grid-column:1/-1}}
+@media(max-width:560px){.hero{grid-template-columns:1fr 1fr}.hero>div:last-child{grid-column:1/-1}.section-tabs{gap:8px;padding:10px 12px}.section-tabs button{font-size:12px;padding:9px 12px}}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
