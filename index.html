@@ -642,6 +642,16 @@ input,select,textarea{
 .sync-panel[data-state="error"] .sync-dot{background:#bd4545}
 .sync-panel button{margin-left:auto;min-height:38px;padding:7px 11px}
 
+
+.finance-month-labels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.finance-month-labels>div{display:flex;flex-direction:column;gap:4px;padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+.finance-month-labels small{font-size:10px;color:var(--muted);font-weight:700}
+.finance-month-labels strong{text-transform:capitalize}
+.finance-table{min-width:540px}
+.finance-table td:not(:first-child),.finance-table th:not(:first-child){text-align:right}
+.finance-highlights{margin-top:14px}
+@media(max-width:600px){.finance-month-labels{gap:7px}.finance-month-labels>div{padding:10px}.finance-table{min-width:500px}}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -846,6 +856,29 @@ input,select,textarea{
  </section>
 
 
+
+
+
+ <section class="card" id="financialComparisonCard">
+  <h2>05 · Painel financeiro</h2>
+  <p class="note">Compare o mês selecionado com o mês anterior. Horas adicionais, DSR e total estimado aparecem separados para facilitar a conferência.</p>
+  <div class="finance-month-labels">
+   <div><small>MÊS SELECIONADO</small><strong id="financeCurrentLabel">—</strong></div>
+   <div><small>MÊS ANTERIOR</small><strong id="financePreviousLabel">—</strong></div>
+  </div>
+  <div class="tablewrap">
+   <table class="finance-table">
+    <thead><tr><th>Indicador</th><th id="financeCurrentHead">Atual</th><th id="financePreviousHead">Anterior</th><th>Diferença</th></tr></thead>
+    <tbody id="financeCompareRows"></tbody>
+   </table>
+  </div>
+  <div class="stats finance-highlights">
+   <div class="stat"><small>VALOR ADICIONAL DO MÊS</small><b id="financeExtraValue">R$ 0,00</b></div>
+   <div class="stat"><small>DSR ESTIMADO (SEPARADO)</small><b id="financeDsrValue">R$ 0,00</b></div>
+   <div class="stat"><small>TOTAL ESTIMADO</small><b id="financeTotalValue">R$ 0,00</b></div>
+  </div>
+  <p class="note" id="financeDisclaimer">Estimativas calculadas com o salário, divisor e parâmetros atuais. Se essas configurações mudaram, os meses anteriores podem não representar os valores vigentes naquela época. O DSR não está incluído no valor das horas adicionais.</p>
+ </section>
 
  <section class="card" id="annualPerformanceCard">
   <h2>05 · Meu desempenho anual</h2>
@@ -1887,6 +1920,50 @@ $('reportMonthXls')?.addEventListener('click',()=>exportExcel('month'));
 $('reportAllXls')?.addEventListener('click',()=>exportExcel($('reportScope').value));
 $('reportMonth')?.addEventListener('change',()=>{});
 
+
+function financeMonthMetrics(monthKey){
+ const list=entries.filter(e=>String(e.date||'').startsWith(monthKey));
+ let worked=0,extraMinutes=0,extraValue=0,nightValue=0,workDays=0;
+ list.forEach(e=>{
+  if((e.dayType||'work')!=='work')return;
+  const c=calc(e);worked+=Number(c.worked)||0;
+  extraMinutes+=(Number(c.extra)||0)*60;
+  extraValue+=Number(c.extraVal)||0;
+  nightValue+=Number(c.nightVal)||0;
+  workDays++;
+ });
+ const wd=Math.max(1,Number($('dsrWorkdays').value)||1);
+ const rd=Math.max(0,Number($('dsrRestdays').value)||0);
+ const dsr=(extraValue+nightValue)/wd*rd;
+ return {list,worked,extraMinutes,extraValue,dsr,total:extraValue+dsr,workDays,count:list.length};
+}
+function renderFinancialComparison(){
+ if(!$('financeCompareRows'))return;
+ const currentKey=$('month').value||'';
+ if(!/^\d{4}-\d{2}$/.test(currentKey))return;
+ const [y,m]=currentKey.split('-').map(Number);
+ const prevDate=new Date(y,m-2,1);
+ const previousKey=`${prevDate.getFullYear()}-${String(prevDate.getMonth()+1).padStart(2,'0')}`;
+ const current=financeMonthMetrics(currentKey),previous=financeMonthMetrics(previousKey);
+ const label=k=>new Date(Number(k.slice(0,4)),Number(k.slice(5,7))-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+ $('financeCurrentLabel').textContent=label(currentKey);
+ $('financePreviousLabel').textContent=label(previousKey);
+ $('financeCurrentHead').textContent=label(currentKey);
+ $('financePreviousHead').textContent=label(previousKey);
+ const rows=[
+  ['Horas trabalhadas',fmtHours(Math.round(current.worked)),fmtHours(Math.round(previous.worked)),fmtHours(Math.round(current.worked-previous.worked))],
+  ['Horas adicionais',fmtHours(Math.round(current.extraMinutes)),fmtHours(Math.round(previous.extraMinutes)),fmtHours(Math.round(current.extraMinutes-previous.extraMinutes))],
+  ['Valor das adicionais',money(current.extraValue),money(previous.extraValue),money(current.extraValue-previous.extraValue)],
+  ['DSR estimado',money(current.dsr),money(previous.dsr),money(current.dsr-previous.dsr)],
+  ['Total estimado',money(current.total),money(previous.total),money(current.total-previous.total)],
+  ['Dias com jornada',String(current.workDays),String(previous.workDays),String(current.workDays-previous.workDays)]
+ ];
+ $('financeCompareRows').innerHTML=rows.map(r=>`<tr><th scope="row">${r[0]}</th><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+ $('financeExtraValue').textContent=money(current.extraValue);
+ $('financeDsrValue').textContent=money(current.dsr);
+ $('financeTotalValue').textContent=money(current.total);
+}
+
 function renderAnnualPerformance(){
  const host=$('annualRows'),select=$('annualYear');
  if(!host||!select)return;
@@ -1920,7 +1997,7 @@ function renderAnnualPerformance(){
 }
 
 const oldRenderForHistory=render;
-render=function(){oldRenderForHistory();renderHistory();renderAnnualPerformance();if($('reportMonth')&&$('month')&& !$('reportMonth').value)$('reportMonth').value=$('month').value;};
+render=function(){oldRenderForHistory();renderHistory();renderAnnualPerformance();renderFinancialComparison();if($('reportMonth')&&$('month')&& !$('reportMonth').value)$('reportMonth').value=$('month').value;};
 $('annualYear')?.addEventListener('change',renderAnnualPerformance);
 
 $('syncRetryBtn')?.addEventListener('click',async()=>{
