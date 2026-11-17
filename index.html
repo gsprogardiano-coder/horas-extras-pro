@@ -1849,17 +1849,27 @@ function resetForm(){
  $('break2').value='yes';$('dayType').value='work';$('obs').value='';toggleDayType();
 }
 function beginEdit(id){
+ const e=entries.find(x=>String(x.id)===String(id));
+ if(!e){msg('Não foi possível localizar este lançamento. Atualize a lista e tente novamente.',true);return;}
+ // A aba de edição precisa ser ativada antes de abrir o formulário.
+ // Caso contrário, entryCard permanece com hidden=true no iPhone e o clique parece não funcionar.
+ if(typeof activateSectionTab==='function') activateSectionTab('entryCard',false);
  openEntryForm();
- const e=entries.find(x=>String(x.id)===String(id));if(!e)return;
  editingId=e.id;
- $('date').value=e.date;$('start').value=e.start;$('end').value=e.end;
- $('breakStart').value=e.breakStart||'';$('breakEnd').value=e.breakEnd||'';
- $('break2').value=e.hasBreak?'yes':'no';$('dayType').value=e.dayType||'work';$('obs').value=e.obs||'';toggleDayType();
+ $('date').value=e.date||'';
+ $('start').value=e.start||'';
+ $('end').value=e.end||'';
+ $('breakStart').value=e.breakStart||'';
+ $('breakEnd').value=e.breakEnd||'';
+ $('break2').value=e.hasBreak?'yes':'no';
+ $('dayType').value=e.dayType||'work';
+ $('obs').value=e.obs||'';
+ toggleDayType();
  $('date').disabled=true;
  $('saveBtn').textContent='✓ Salvar alterações';
  $('cancelEdit').hidden=false;
  msg('Editando lançamento. Altere os campos e toque em Salvar alterações.');
- $('date').scrollIntoView({behavior:'smooth',block:'center'});
+ $('entryCard').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function openEntryForm(dateValue){
  const card=$('entryCard');
@@ -1995,9 +2005,11 @@ $('cancelEdit').onclick=()=>{resetForm();closeEntryForm();msg('Edição cancelad
 $('cancelEntry').onclick=()=>{resetForm();closeEntryForm();msg('Registro cancelado. O formulário foi fechado.')};
 $('clearForm').onclick=()=>{resetForm();msg('Campos limpos.')};
 $('rows').onclick=async ev=>{
- let edit=ev.target.closest('[data-edit]')?.dataset.edit;
- let duplicate=ev.target.closest('[data-dup]')?.dataset.dup;
- let id=ev.target.closest('[data-del]')?.dataset.del;
+ const target=ev.target instanceof Element?ev.target:null;
+ if(!target)return;
+ let edit=target.closest('button[data-edit]')?.dataset.edit;
+ let duplicate=target.closest('button[data-dup]')?.dataset.dup;
+ let id=target.closest('button[data-del]')?.dataset.del;
  if(edit){beginEdit(edit);return}
  if(duplicate){
   const source=entries.find(x=>String(x.id)===String(duplicate));if(!source)return;
