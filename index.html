@@ -830,7 +830,8 @@ function dbInteger(value){
 async function cloudSaveEntries(force=false){
  if(!sb||!authUser||(cloudBusy&&!force))return;
  try{
-  const rows=entries.map(e=>{
+  const deletedIds=getDeletedEntryIds();
+  const rows=entries.filter(e=>!deletedIds.has(String(e.id))).map(e=>{
    const c=calc(e);
    const worked=dbInteger(c.worked);
    const additional=Math.min(worked,dbInteger((Number(c.extra)||0)*60));
@@ -848,7 +849,15 @@ async function cloudSaveEntries(force=false){
 async function syncCloud(){if(!sb||!authUser)return;cloudBusy=true;try{
  const [{data:cloudEntries,error:entriesErr},{data:settingsRows,error:settingsErr}]=await Promise.all([sb.from('work_entries').select('*').eq('user_id',authUser.id),sb.from('user_settings').select('*').eq('user_id',authUser.id).limit(1)]);
  if(entriesErr)throw entriesErr;if(settingsErr)throw settingsErr;
- const remote=(cloudEntries||[]).map(r=>{const e=r.entry_data||{id:r.entry_id||r.id,date:r.work_date,dayType:dayTypeFromDatabase(r.day_type),start:r.start_time||'',end:r.end_time||'',hasBreak:false,obs:r.notes||''};return {...e,id:String(e.id??r.entry_id??r.id)};});
+ const deletedIds=getDeletedEntryIds();
+ const remoteAll=(cloudEntries||[]).map(r=>{const e=r.entry_data||{id:r.entry_id||r.id,date:r.work_date,dayType:dayTypeFromDatabase(r.day_type),start:r.start_time||'',end:r.end_time||'',hasBreak:false,obs:r.notes||''};return {...e,id:String(e.id??r.entry_id??r.id)};});
+ // Se uma consulta antiga ou outro dispositivo devolver um ID já excluído, não o ressuscita.
+ const resurrected=remoteAll.filter(e=>deletedIds.has(String(e.id)));
+ for(const e of resurrected){
+  const {error:delError}=await sb.from('work_entries').delete().eq('user_id',authUser.id).eq('entry_id',String(e.id));
+  if(delError)throw delError;
+ }
+ const remote=remoteAll.filter(e=>!deletedIds.has(String(e.id)));
  const localRaw=localStorage.getItem(dataKey());const local=JSON.parse(localRaw||'[]');
  // Mescla pela identidade do lançamento, não pela data: pode haver mais de uma jornada no mesmo dia.
  const merged=new Map((Array.isArray(local)?local:[]).map(e=>[String(e.id),e]));
@@ -927,10 +936,28 @@ window.addEventListener('focus',()=>{if(authUser)refreshCloudFromRealtime();});
 window.addEventListener('online',()=>{if(authUser)refreshCloudFromRealtime();});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&authUser)refreshCloudFromRealtime();});
 
+function deletedEntryKey(){
+ return 'gardy_deleted_entries_'+(authUser?.id||'local');
+}
+function getDeletedEntryIds(){
+ try{return new Set(JSON.parse(localStorage.getItem(deletedEntryKey())||'[]').map(String));}
+ catch(e){return new Set();}
+}
+function saveDeletedEntryIds(ids){
+ localStorage.setItem(deletedEntryKey(),JSON.stringify([...ids]));
+}
 async function cloudDeleteEntry(id){
- if(!sb||!authUser)return;
- const {error}=await sb.from('work_entries').delete().eq('user_id',authUser.id).eq('entry_id',String(id));
- if(error)authMessage('O registro foi removido deste aparelho, mas não da nuvem: '+error.message,true);
+ if(!sb||!authUser)throw new Error('Entre na sua conta para excluir e sincronizar este lançamento.');
+ const target=String(id);
+ const {data,error}=await sb.from('work_entries').delete()
+  .eq('user_id',authUser.id).eq('entry_id',target).select('entry_id');
+ if(error)throw error;
+ // Confirma que o lançamento realmente deixou de existir na nuvem.
+ const {data:remaining,error:checkError}=await sb.from('work_entries')
+  .select('entry_id').eq('user_id',authUser.id).eq('entry_id',target).limit(1);
+ if(checkError)throw checkError;
+ if(remaining&&remaining.length)throw new Error('O Supabase não confirmou a exclusão. Verifique a política de exclusão (DELETE) da tabela work_entries.');
+ return true;
 }
 async function initAuth(){if(!sb){const m='Não foi possível carregar o serviço de login. Verifique sua conexão e atualize a página.';authMessage(m,true);gateMessage(m,true);return}try{const {data,error}=await sb.auth.getSession();if(error)throw error;authUser=data.session?.user||null;if(authUser){await syncCloud();startCloudRealtime();}setAuthUI();authReady=true;sb.auth.onAuthStateChange((event,session)=>{authUser=session?.user||null;setAuthUI();if(event==='SIGNED_IN'&&authUser)setTimeout(async()=>{await syncCloud();startCloudRealtime();},0);if(event==='SIGNED_OUT')stopCloudRealtime();});}catch(e){const m='Erro ao iniciar login: '+(e.message||e);authMessage(m,true);gateMessage(m,true)}}
 
@@ -1306,7 +1333,7 @@ $('saveBtn').onclick=()=>{
 };
 $('cancelEdit').onclick=()=>{resetForm();msg('Edição cancelada.')};
 $('clearForm').onclick=()=>{resetForm();msg('Campos limpos.')};
-$('rows').onclick=ev=>{
+$('rows').onclick=async ev=>{
  let edit=ev.target.closest('[data-edit]')?.dataset.edit;
  let duplicate=ev.target.closest('[data-dup]')?.dataset.dup;
  let id=ev.target.closest('[data-del]')?.dataset.del;
@@ -1322,7 +1349,26 @@ $('rows').onclick=ev=>{
   msg('Jornada copiada para o dia seguinte. Confira a data e os horários antes de adicionar.');
   $('date').scrollIntoView({behavior:'smooth',block:'center'});return;
  }
- if(id&&confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')){entries=entries.filter(e=>String(e.id)!==String(id));if(String(editingId)===String(id))resetForm();persist();if(authUser)cloudDeleteEntry(id);msg('Lançamento excluído.')}
+ if(id&&confirm('Excluir este lançamento? Esta ação não pode ser desfeita.')){
+  const row=entries.find(e=>String(e.id)===String(id));
+  const deletedIds=getDeletedEntryIds();
+  deletedIds.add(String(id));
+  saveDeletedEntryIds(deletedIds);
+  const deleteButton=ev.target.closest('button');
+  if(deleteButton){deleteButton.disabled=true;deleteButton.textContent='Excluindo...';}
+  try{
+   if(authUser)await cloudDeleteEntry(id);
+   entries=entries.filter(e=>String(e.id)!==String(id));
+   if(String(editingId)===String(id))resetForm();
+   localStorage.setItem(dataKey(),JSON.stringify(entries));
+   render();
+   msg('Lançamento excluído e sincronizado.');
+  }catch(err){
+   deletedIds.delete(String(id));saveDeletedEntryIds(deletedIds);
+   if(deleteButton){deleteButton.disabled=false;deleteButton.textContent='Excluir';}
+   authMessage('Não foi possível confirmar a exclusão na nuvem: '+(err.message||err)+'. O lançamento foi mantido para evitar perda de dados.',true);
+  }
+ }
 };
 $('switchProfile').addEventListener('click',()=>{if($('profileEditor').hidden)openAccountEditor();else closeAccountEditor();});
 $('saveAccountChanges').addEventListener('click',saveAccountChanges);
