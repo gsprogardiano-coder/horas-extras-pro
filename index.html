@@ -615,6 +615,24 @@ input,select,textarea{
  .calendar-toolbar strong{flex:1;min-width:115px}
 }
 
+
+/* Painel anual de desempenho */
+.annual-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.annual-chart{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:7px;align-items:end;min-height:150px;padding:14px 8px 8px;margin:12px 0;background:var(--bg);border:1px solid var(--line);border-radius:14px}
+.annual-month{display:flex;flex-direction:column;align-items:center;justify-content:end;gap:6px;min-width:0;height:125px}
+.annual-bar-track{height:92px;width:100%;display:flex;align-items:end;justify-content:center}
+.annual-bar{width:min(100%,28px);min-height:3px;border-radius:7px 7px 2px 2px;background:var(--mint);border:1px solid rgba(20,36,56,.12)}
+.annual-month small{font-size:10px;color:var(--muted)}
+.annual-month b{font-size:10px;line-height:1.1;overflow-wrap:anywhere;text-align:center}
+.annual-table{min-width:570px}
+@media(max-width:600px){
+ .annual-chart{gap:3px;padding:10px 4px}
+ .annual-month{height:112px}
+ .annual-bar-track{height:80px}
+ .annual-month small{font-size:9px}
+ .annual-month b{font-size:9px}
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -811,6 +829,33 @@ input,select,textarea{
   <div class="monthrow no-print"><span style="font-weight:700">Lançamentos</span><span class="right"></span><button class="secondary" id="csv">Exportar CSV</button><button class="secondary" id="backup">Backup JSON</button><label class="secondary" style="padding:11px 15px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px">Restaurar backup<input id="restore" type="file" accept="application/json" hidden></label><button class="secondary" id="pdf">Gerar relatório PDF profissional</button></div>
   <div class="tablewrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Trabalhadas</th><th>Extras</th><th>Noturnas</th><th>Valor das adicionais</th><th class="no-print">Ações</th></tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Nenhuma jornada registrada neste mês.</td></tr></tbody></table></div>
   <p class="note" id="storageNote">Com login, os dados são sincronizados com sua conta na nuvem. Sem login, permanecem neste aparelho. Use Backup JSON como cópia de segurança.</p>
+ </section>
+
+
+
+ <section class="card" id="annualPerformanceCard">
+  <h2>05 · Meu desempenho anual</h2>
+  <p class="note">Acompanhe sua evolução mês a mês. Os valores são estimativas calculadas com as configurações salariais atuais e os registros existentes.</p>
+  <div class="monthrow annual-toolbar">
+   <label for="annualYear">Ano de referência</label>
+   <select id="annualYear" style="max-width:150px"></select>
+   <span class="right"></span>
+   <strong id="annualEntryCount">0 lançamentos</strong>
+  </div>
+  <div class="stats annual-stats">
+   <div class="stat"><small>HORAS TRABALHADAS</small><b id="annualWorked">0h</b></div>
+   <div class="stat"><small>HORAS ADICIONAIS</small><b id="annualExtra">0h</b></div>
+   <div class="stat"><small>VALOR ESTIMADO DAS ADICIONAIS</small><b id="annualValue">R$ 0,00</b></div>
+   <div class="stat"><small>DIAS COM JORNADA</small><b id="annualDays">0</b></div>
+  </div>
+  <div class="annual-chart" id="annualChart" role="img" aria-label="Gráfico de horas adicionais por mês"></div>
+  <div class="tablewrap">
+   <table class="annual-table">
+    <thead><tr><th>Mês</th><th>Trabalhadas</th><th>Adicionais</th><th>Valor estimado</th><th>Registros</th></tr></thead>
+    <tbody id="annualRows"><tr><td colspan="5" class="empty">Nenhum registro neste ano.</td></tr></tbody>
+   </table>
+  </div>
+  <p class="note">Atenção: o valor anual é uma estimativa com o salário e divisor atualmente configurados. Se essas configurações mudaram durante o ano, os valores históricos podem não refletir o salário vigente em cada mês. O DSR permanece separado no resumo mensal.</p>
  </section>
 
  <section class="card" id="historyCard">
@@ -1809,8 +1854,42 @@ $('reportAllPdf')?.addEventListener('click',()=>printHistory($('reportScope').va
 $('reportMonthXls')?.addEventListener('click',()=>exportExcel('month'));
 $('reportAllXls')?.addEventListener('click',()=>exportExcel($('reportScope').value));
 $('reportMonth')?.addEventListener('change',()=>{});
+
+function renderAnnualPerformance(){
+ const host=$('annualRows'),select=$('annualYear');
+ if(!host||!select)return;
+ const years=[...new Set(entries.map(e=>String(e.date||'').slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort();
+ const current=String(($('month').value||'').slice(0,4)||new Date().getFullYear());
+ const previous=select.value;
+ select.innerHTML=(years.length?years:[current]).map(y=>`<option value="${y}">${y}</option>`).join('');
+ select.value=years.includes(previous)?previous:(years.includes(current)?current:(years[years.length-1]||current));
+ const year=select.value;
+ const months=Array.from({length:12},(_,i)=>({key:`${year}-${String(i+1).padStart(2,'0')}`,label:new Date(Number(year),i,1).toLocaleDateString('pt-BR',{month:'short'}),worked:0,extra:0,value:0,days:0,count:0}));
+ const chosen=entries.filter(e=>String(e.date||'').startsWith(year+'-'));
+ chosen.forEach(e=>{
+  const month=months[Number(String(e.date).slice(5,7))-1];if(!month)return;
+  month.count++;
+  if((e.dayType||'work')==='work'){
+   const c=calc(e);month.worked+=Number(c.worked)||0;month.extra+=(Number(c.extra)||0)*60;month.value+=Number(c.extraVal)||0;month.days++;
+  }
+ });
+ const total=months.reduce((a,m)=>({worked:a.worked+m.worked,extra:a.extra+m.extra,value:a.value+m.value,days:a.days+m.days}),{worked:0,extra:0,value:0,days:0});
+ $('annualWorked').textContent=fmtHours(Math.round(total.worked));
+ $('annualExtra').textContent=fmtHours(Math.round(total.extra));
+ $('annualValue').textContent=money(total.value);
+ $('annualDays').textContent=String(total.days);
+ $('annualEntryCount').textContent=`${chosen.length} lançamento(s)`;
+ const max=Math.max(1,...months.map(m=>m.extra));
+ $('annualChart').innerHTML=months.map(m=>{
+  const h=m.extra?Math.max(4,Math.round(m.extra/max*88)):0;
+  return `<div class="annual-month" title="${m.label}: ${fmtHours(Math.round(m.extra))} adicionais"><div class="annual-bar-track"><div class="annual-bar" style="height:${h}px"></div></div><b>${m.extra?fmtHours(Math.round(m.extra)):'—'}</b><small>${m.label.replace('.','')}</small></div>`;
+ }).join('');
+ $('annualRows').innerHTML=months.some(m=>m.count)?months.map(m=>`<tr><td>${m.label}</td><td>${fmtHours(Math.round(m.worked))}</td><td>${fmtHours(Math.round(m.extra))}</td><td>${money(m.value)}</td><td>${m.count}</td></tr>`).join(''):`<tr><td colspan="5" class="empty">Nenhum registro neste ano.</td></tr>`;
+}
+
 const oldRenderForHistory=render;
-render=function(){oldRenderForHistory();renderHistory();if($('reportMonth')&&$('month')&& !$('reportMonth').value)$('reportMonth').value=$('month').value;};
+render=function(){oldRenderForHistory();renderHistory();renderAnnualPerformance();if($('reportMonth')&&$('month')&& !$('reportMonth').value)$('reportMonth').value=$('month').value;};
+$('annualYear')?.addEventListener('change',renderAnnualPerformance);
 
 migrateLegacyToActive();
 updateProfileLabel();
