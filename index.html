@@ -125,7 +125,7 @@ body:before{
              linear-gradient(90deg,rgba(255,28,45,.025),transparent 18%,transparent 82%,rgba(255,28,45,.025));
 }
 header{
-  position:relative;overflow:hidden;
+  position:relative;overflow:visible;
   background:linear-gradient(120deg,rgba(5,6,9,.97),rgba(18,19,24,.96) 62%,rgba(30,8,13,.96));
   border-bottom:1px solid #9c1d2b;padding-top:20px;padding-bottom:25px;
   box-shadow:0 12px 34px #0009,0 1px 0 #ff263b33;
@@ -219,7 +219,11 @@ footer{color:#969da8}
 .calday.absence-unjustified{border-color:#e33b50;background:rgba(227,59,80,.14)}
 
 /* Menu e histórico Gardy */
-.gardy-nav{position:sticky;top:0;z-index:1000;background:rgba(10,11,15,.97);backdrop-filter:blur(12px);border-bottom:1px solid #64202a;padding:9px 14px;display:flex;align-items:center;gap:9px}
+.gardy-nav{position:relative;z-index:1200;background:transparent;padding:10px 14px 6px;display:flex;align-items:center;justify-content:flex-end;gap:9px;border:0}
+.gardy-nav>span{display:none}
+.gardy-nav-links{position:absolute;top:100%;right:14px;z-index:1300;width:min(280px,calc(100vw - 28px));max-width:none;margin:0;padding:10px;background:#111318;border:1px solid #64202a;border-radius:13px;box-shadow:0 12px 35px #000b;display:none;flex-direction:column;flex-wrap:nowrap}
+.gardy-nav-links.open{display:flex}
+.gardy-nav-links button{text-align:left;width:100%;padding:12px 14px}
 .gardy-nav button{padding:10px 13px;font-size:13px;white-space:nowrap}
 .gardy-nav .nav-toggle{min-width:42px;background:#202127;border:1px solid #555}
 .gardy-nav-links{display:none;flex-wrap:wrap;gap:7px;max-width:1080px;margin:auto;padding:8px 12px;background:#111318;border-bottom:1px solid #64202a}
@@ -233,7 +237,7 @@ footer{color:#969da8}
 .history-month button{padding:8px 11px;font-size:12px}
 .report-actions{display:flex;gap:9px;flex-wrap:wrap}
 #historyReportPrint{display:none}
-@media(max-width:600px){.gardy-nav{overflow-x:auto}.history-month{align-items:flex-start}.history-month button{white-space:nowrap}}
+@media(max-width:600px){.gardy-nav{overflow:visible}.history-month{align-items:flex-start}.history-month button{white-space:nowrap}}
 @media print{
  body.print-history>*:not(#historyReportPrint){display:none!important}
  body.print-history #historyReportPrint{display:block!important;position:absolute;inset:0;background:white;color:#111;padding:20px;font:11px Arial,sans-serif}
@@ -257,6 +261,9 @@ footer{color:#969da8}
 .profile-top-fields label{display:block;margin-bottom:7px}
 .profile-manage-wrap{display:flex;align-items:end;grid-column:1/-1}
 .profile-manage-wrap button{height:44px;width:100%;white-space:nowrap;padding:0 16px}
+.profile-signout-wrap{margin-top:8px}
+.profile-signout-wrap button{background:#202127;border:1px solid #555;color:#f2f2f2}
+body.authenticated #accountCard{display:none!important}
 .profile-top-card .note{margin:8px 0 0;font-size:12px}
 .profile-top-card .profile-editor{margin-top:13px}
 @media(max-width:760px){.profile-top-card{margin:0 0 14px;padding:13px}.profile-top-fields{grid-template-columns:1fr 1fr}.profile-manage-wrap{grid-column:1/-1}.profile-manage-wrap button{width:100%}}
@@ -336,6 +343,19 @@ body.authenticated #accountCard{display:none!important}
 </section>
 
 <header>
+<nav class="gardy-nav no-print" aria-label="Menu principal">
+ <button type="button" class="nav-toggle" id="gardyMenuToggle" aria-expanded="false" aria-controls="gardyMenuLinks">☰ Menu</button>
+ <span style="font-weight:800;letter-spacing:.05em;color:#fff">GARDY HORAS PRO</span>
+</nav>
+<div class="gardy-nav-links no-print" id="gardyMenuLinks">
+ <button type="button" data-go="top">Início</button>
+ <button type="button" data-go="mainTools">Marcar ponto</button>
+ <button type="button" data-go="calendarCard">Calendário</button>
+ <button type="button" data-go="historyCard">Histórico</button>
+ <button type="button" data-go="reportsCard">Relatórios</button>
+ <button type="button" data-go="salaryCalc">Calculadora</button>
+ <button type="button" data-go="accountCard">Conta</button>
+</div>
   <div class="brand"><img class="logo-img" src="./logo-gardy.png" alt="Logo Gardy VJ"><div>HORAS EXTRAS PRO</div><span class="pill">PESSOAL</span></div>
   <div class="sub">Controle de jornada variável · jornada urbana · pagamento de horas extras</div>
  <section class="card profile-top-card" id="profileCard">
@@ -344,6 +364,7 @@ body.authenticated #accountCard{display:none!important}
    <div class="field"><label>Nome completo</label><div id="profileName" class="profile-readonly-value">—</div></div>
    <div class="field"><label>E-mail</label><div id="profileEmail" class="profile-readonly-value">—</div></div>
    <div class="profile-manage-wrap"><button id="switchProfile" type="button">Gerenciar minha conta</button></div>
+   <div class="profile-manage-wrap profile-signout-wrap"><button id="signOutBtn" type="button" class="secondary" hidden>Sair da conta</button></div>
   </div>
   <p class="note" id="profileStatus">Entre na sua conta para visualizar e gerenciar seus dados de perfil.</p>
   <div id="profileEditor" class="profile-editor" hidden>
@@ -363,19 +384,6 @@ body.authenticated #accountCard{display:none!important}
   <div class="hero"><div><small>VALOR DAS HORAS ADICIONAIS</small><strong id="heroTotal">R$ 0,00</strong></div><div><small id="monthLabel">Fechamento mensal</small><div style="font-weight:700">Seus registros ficam neste dispositivo ou na sua conta</div></div></div>
 </header>
 
-<nav class="gardy-nav no-print" aria-label="Menu principal">
- <button type="button" class="nav-toggle" id="gardyMenuToggle" aria-expanded="false" aria-controls="gardyMenuLinks">☰ Menu</button>
- <span style="font-weight:800;letter-spacing:.05em;color:#fff">GARDY HORAS PRO</span>
-</nav>
-<div class="gardy-nav-links no-print" id="gardyMenuLinks">
- <button type="button" data-go="top">Início</button>
- <button type="button" data-go="mainTools">Marcar ponto</button>
- <button type="button" data-go="calendarCard">Calendário</button>
- <button type="button" data-go="historyCard">Histórico</button>
- <button type="button" data-go="reportsCard">Relatórios</button>
- <button type="button" data-go="salaryCalc">Calculadora</button>
- <button type="button" data-go="accountCard">Conta</button>
-</div>
 
 <main>
  <section class="card" style="margin-bottom:16px" id="accountCard">
@@ -385,7 +393,7 @@ body.authenticated #accountCard{display:none!important}
    <div class="field"><label for="authEmail">E-mail</label><input id="authEmail" type="email" autocomplete="email" placeholder="seu@email.com"></div>
    <div class="field"><label for="authPassword">Senha (mínimo 6 caracteres)</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Sua senha"></div>
   </div>
-  <div class="actions"><button id="signUpBtn" type="button">Criar conta grátis</button><button id="signInBtn" type="button" class="secondary">Entrar</button><button id="signOutBtn" type="button" class="secondary" hidden>Sair</button></div>
+  <div class="actions"><button id="signUpBtn" type="button">Criar conta grátis</button><button id="signInBtn" type="button" class="secondary">Entrar</button></div>
   <p class="note" id="authStatus" role="status">Sem login: seus dados continuam salvos somente neste aparelho.</p>
  </section>
  <section class="card" style="margin-bottom:16px" id="donationCard">
