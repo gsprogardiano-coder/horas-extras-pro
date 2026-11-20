@@ -904,6 +904,40 @@ input,select,textarea{
   #profileEditor .actions > button {transition:none!important}
 }
 
+
+
+/* CORREÇÃO: cartões de integridade com fundo e texto legíveis no tema escuro */
+#integrityPanel{
+  color:#f4f5f7!important;
+  background:linear-gradient(145deg,rgba(22,24,30,.97),rgba(9,10,14,.97))!important;
+  border:1px solid #555b66!important;
+}
+#integrityPanel h3{color:#fff!important}
+#integrityPanel .integrity-grid>div{
+  background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.035))!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  color:#f4f5f7!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.10),0 4px 12px rgba(0,0,0,.20)!important;
+}
+#integrityPanel .integrity-grid small{
+  color:#c7cbd3!important;
+  opacity:1!important;
+}
+#integrityPanel .integrity-grid strong{
+  color:#ff596b!important;
+  text-shadow:0 0 12px rgba(255,38,59,.20);
+}
+#integrityPanel .integrity-grid span{
+  color:#e1e3e8!important;
+  opacity:1!important;
+}
+#integrityPanel #integrityNote{color:#b8bec8!important}
+#integrityPanel #integrityCheckBtn{
+  background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.045)),linear-gradient(120deg,#24272e,#121419)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.28)!important;
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
