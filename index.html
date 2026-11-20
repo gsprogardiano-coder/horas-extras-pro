@@ -672,15 +672,6 @@ input,select,textarea{
 .integrity-grid strong{font-size:1.25rem;overflow-wrap:anywhere}
 .integrity-grid span{font-size:.75rem;opacity:.8}
 @media(max-width:520px){.integrity-grid{grid-template-columns:1fr 1fr}.integrity-grid>div:last-child{grid-column:1/-1}}
-/* Correção de contraste do painel de integridade no tema escuro */
-#integrityPanel{background:linear-gradient(145deg,#17191f,#0c0e12);border:1px solid #555b66;color:#f4f5f7}
-#integrityPanel .integrity-grid>div{background:linear-gradient(145deg,#252830,#15171c)!important;border:1px solid #454a55;color:#f4f5f7}
-#integrityPanel .integrity-grid small{color:#c4c9d2;opacity:1}
-#integrityPanel .integrity-grid strong{color:#fff}
-#integrityPanel .integrity-grid span{color:#aeb4be;opacity:1}
-#integrityPanel #integrityNote{color:#b8bec8}
-#integrityPanel #integrityCheckBtn:disabled{opacity:.65;cursor:wait}
-
 .checkline{display:flex;align-items:center;gap:9px;font-weight:600}.checkline input{width:20px;height:20px}#paymentExpected,#paymentDifference{display:block;font-size:1.15rem}
 /* Navegação por abas: perfil fixo, apenas uma seção de trabalho aberta */
 .section-tabs{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:10px 12px;overflow:visible;white-space:normal;padding:12px 16px;margin:0 auto 14px;max-width:1200px;scrollbar-width:none}
@@ -743,7 +734,7 @@ input,select,textarea{
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Gerador QR Pix incorporado ao próprio app: funciona sem CDN. -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./logo-gardy.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -858,6 +849,7 @@ input,select,textarea{
  <button type="button" data-tab="reminderCard">Lembretes</button>
  <button type="button" data-tab="paymentCompareCard">Pagamento</button>
  <button type="button" data-tab="salarySettingsPanel">Configurações</button>
+ <button type="button" data-tab="entryCard">Registrar jornada</button>
  <button type="button" data-tab="calendarCard">Calendário</button>
  <button type="button" data-tab="summaryCard">Resumo</button>
  <button type="button" data-tab="financialComparisonCard">Painel financeiro</button>
@@ -1054,7 +1046,7 @@ input,select,textarea{
    <div class="field"><label for="otherDiscounts">Outros descontos (R$)</label><input id="otherDiscounts" type="number" min="0" step=".01" value="0" placeholder="VT, plano, faltas etc."></div>
   </div>
   <div class="stats" style="margin-top:14px">
-   <div class="stat"><small>SALÁRIO BRUTO ESTIMADO</small><b id="grossPay">R$ 0,00</b></div>
+   <div class="stat"><small>SALÁRIO-BASE (BRUTO)</small><b id="grossPay">R$ 0,00</b></div>
    <div class="stat"><small>INSS ESTIMADO</small><b id="inssPay">R$ 0,00</b></div>
    <div class="stat"><small>IRRF ESTIMADO</small><b id="irrfPay">R$ 0,00</b></div>
    <div class="stat"><small>OUTROS DESCONTOS</small><b id="otherPay">R$ 0,00</b></div>
@@ -1062,6 +1054,8 @@ input,select,textarea{
    <div class="stat"><small>PERDA ESTIMADA DE DSR</small><b id="absenceDsrPay">R$ 0,00</b></div>
    <div class="stat"><small>TOTAL DE DESCONTOS</small><b id="deductionsPay">R$ 0,00</b></div>
    <div class="stat"><small>SALÁRIO LÍQUIDO ESTIMADO</small><b id="netPay">R$ 0,00</b></div>
+   <div class="stat"><small>VALOR TOTAL DAS HORAS EXTRAS</small><b id="extraPay">R$ 0,00</b></div>
+   <div class="stat"><small>TOTAL BRUTO (SALÁRIO + HORAS EXTRAS)</small><b id="combinedPay">R$ 0,00</b></div>
   </div>
   <p class="note" id="taxNote">Cálculo estimado com tabelas 2026. Não inclui descontos não informados, benefícios, pensão, sindicato, adiantamentos ou regras específicas da folha.</p>
  </section>
@@ -1199,113 +1193,6 @@ function gateMessage(t,bad=false){const el=$('gateStatus');if(el){el.textContent
 function setAuthUI(){ $('signOutBtn').hidden=!authUser; $('signInBtn').hidden=!!authUser; $('signUpBtn').hidden=!!authUser; document.body.classList.toggle('authenticated',!!authUser); if(authUser){activeProfileName=accountFullName(authUser);localStorage.setItem(PROFILE_NAME_KEY,activeProfileName);updateProfileLabel();authMessage('Conta conectada. Verificando sincronização...');setSyncStatus('pending','Conta conectada. Verificando sincronização…');gateMessage('Acesso autorizado.');} }
 function crc16(str){let crc=0xFFFF;for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}return crc.toString(16).toUpperCase().padStart(4,'0')}
 function tlv(id,value){const v=String(value);return id+String(v.length).padStart(2,'0')+v}
-
-/* GERADOR QR PIX OFFLINE — QR Code Model 2, versão 8-L.
-   Implementação local para payload Pix EMV ASCII; não depende de CDN. */
-function gardyQrGfMul(x,y){
- let z=0;
- for(let i=0;i<8;i++){if(y&1)z^=x;const hi=x&0x80;x=(x<<1)&255;if(hi)x^=0x1d;y>>=1;}
- return z;
-}
-function gardyQrRs(data,degree){
- let gen=[1],root=1;
- for(let i=0;i<degree;i++){
-  const next=new Array(gen.length+1).fill(0);
-  for(let j=0;j<gen.length;j++){next[j]^=gen[j];next[j+1]^=gardyQrGfMul(gen[j],root);}
-  gen=next;root=gardyQrGfMul(root,2);
- }
- const out=data.concat(new Array(degree).fill(0));
- for(let i=0;i<data.length;i++){const factor=out[i];if(factor)for(let j=0;j<gen.length;j++)out[i+j]^=gardyQrGfMul(gen[j],factor);}
- return out.slice(data.length);
-}
-function gardyQrMatrix(text){
- const bytes=Array.from(new TextEncoder().encode(String(text)));
- if(bytes.some(b=>b>127))throw new Error('O código Pix contém caracteres não ASCII.');
- if(bytes.length>192)throw new Error('Código Pix maior que a capacidade do QR offline.');
- const dataBits=[];
- const put=(value,len)=>{for(let i=len-1;i>=0;i--)dataBits.push((value>>>i)&1);};
- put(4,4);put(bytes.length,8);bytes.forEach(b=>put(b,8));
- const capacity=194*8;
- for(let i=0;i<Math.min(4,capacity-dataBits.length);i++)dataBits.push(0);
- while(dataBits.length%8)dataBits.push(0);
- const data=[];
- for(let i=0;i<dataBits.length;i+=8){let v=0;for(let j=0;j<8;j++)v=(v<<1)|dataBits[i+j];data.push(v);}
- for(let pad=0;data.length<194;pad++)data.push(pad%2?0x11:0xec);
- const blocks=[data.slice(0,97),data.slice(97,194)];
- const ecc=blocks.map(b=>gardyQrRs(b,24));
- const codewords=[];
- for(let i=0;i<97;i++)for(const b of blocks)codewords.push(b[i]);
- for(let i=0;i<24;i++)for(const b of ecc)codewords.push(b[i]);
- const n=49, m=Array.from({length:n},()=>Array(n).fill(null));
- const set=(r,c,v)=>{if(r>=0&&r<n&&c>=0&&c<n)m[r][c]=!!v;};
- function finder(r0,c0){
-  for(let r=-1;r<=7;r++)for(let c=-1;c<=7;c++){
-   const rr=r0+r,cc=c0+c;if(rr<0||rr>=n||cc<0||cc>=n)continue;
-   set(rr,cc,r>=0&&r<=6&&c>=0&&c<=6&&(r===0||r===6||c===0||c===6||(r>=2&&r<=4&&c>=2&&c<=4)));
-  }
- }
- finder(0,0);finder(n-7,0);finder(0,n-7);
- // Alignment patterns for version 8: centers 6, 24, 42.
- for(const r of [6,24,42])for(const c of [6,24,42]){
-  if(m[r][c]!==null)continue;
-  for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++)
-   set(r+dr,c+dc,Math.max(Math.abs(dr),Math.abs(dc))!==1);
- }
- for(let i=8;i<n-8;i++){if(m[i][6]===null)set(i,6,i%2===0);if(m[6][i]===null)set(6,i,i%2===0);}
- // Reserve format information locations.
- for(let i=0;i<15;i++){
-  if(i<6)set(i,8,false);else if(i<8)set(i+1,8,false);else set(n-15+i,8,false);
-  if(i<8)set(8,n-i-1,false);else if(i<9)set(8,15-i,false);else set(8,15-i-1,false);
- }
- set(n-8,8,true);
- // Version information (required for QR versions 7 and above).
- let version=8, versionRem=version;
- for(let i=0;i<12;i++)versionRem=(versionRem<<1)^(((versionRem>>>11)&1)*0x1f25);
- const versionBits=(version<<12)|versionRem;
- for(let i=0;i<18;i++){
-  const v=(versionBits>>>i)&1;
-  const a=n-11+(i%3),b=Math.floor(i/3);
-  set(b,a,v);set(a,b,v);
- }
- // Place codeword bits in standard two-column zig-zag.
- let bit=0,row=n-1,dir=-1;
- for(let col=n-1;col>0;col-=2){
-  if(col===6)col--;
-  while(true){
-   for(let j=0;j<2;j++){
-    const c=col-j;
-    if(m[row][c]===null){
-     const raw=bit<codewords.length*8?((codewords[Math.floor(bit/8)]>>(7-(bit%8)))&1):0;
-     set(row,c,Boolean(raw)^((row+c)%2===0));bit++;
-    }
-   }
-   row+=dir;
-   if(row<0||row>=n){row-=dir;dir=-dir;break;}
-  }
- }
- // Format: error correction L + mask 0; BCH polynomial 0x537, XOR mask 0x5412.
- let format=1<<3, rem=format<<10;
- for(let i=14;i>=10;i--)if((rem>>>i)&1)rem^=0x537<<(i-10);
- const formatBits=((format<<10)|rem)^0x5412;
- for(let i=0;i<15;i++){
-  const v=(formatBits>>>i)&1;
-  if(i<6)set(i,8,v);else if(i<8)set(i+1,8,v);else set(n-15+i,8,v);
-  if(i<8)set(8,n-i-1,v);else if(i<9)set(8,15-i,v);else set(8,15-i-1,v);
- }
- set(n-8,8,true);
- return m;
-}
-function gardyDrawPixQr(canvas,payload){
- const matrix=gardyQrMatrix(payload),ctx=canvas.getContext('2d');
- const quiet=4,modules=matrix.length+quiet*2,size=228,scale=size/modules;
- canvas.width=size;canvas.height=size;
- ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);
- ctx.fillStyle='#000';
- for(let r=0;r<matrix.length;r++)for(let c=0;c<matrix.length;c++)if(matrix[r][c])
-  ctx.fillRect(Math.round((c+quiet)*scale),Math.round((r+quiet)*scale),
-   Math.ceil(scale),Math.ceil(scale));
-}
-
 function makePixPayload(amount){
  const mai=tlv('00','br.gov.bcb.pix')+tlv('01',PIX_KEY);
  let payload=tlv('00','01')+tlv('26',mai)+tlv('52','0000')+tlv('53','986');
@@ -1314,7 +1201,7 @@ function makePixPayload(amount){
  return payload+crc16(payload);
 }
 $('pixAmount').addEventListener('change',()=>{$('pixCustomWrap').hidden=$('pixAmount').value!=='0';$('pixQrWrap').style.display='none';});
-$('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}const payload=makePixPayload(amount);gardyDrawPixQr($('pixQr'),payload);$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
+$('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}if(!window.QRCode){pixMessage('Gerador de QR indisponível. Você ainda pode copiar a chave Pix.',true);return}const payload=makePixPayload(amount);await QRCode.toCanvas($('pixQr'),payload,{width:220,margin:1,errorCorrectionLevel:'M'});$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
 $('pixCopyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(PIX_KEY);pixMessage('Chave Pix copiada.');}catch(e){pixMessage('Não foi possível copiar automaticamente. Chave: '+PIX_KEY,true)}});
 $('pixCopyPayloadBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('pixCopyPayloadBtn').dataset.payload||'');pixMessage('Código Pix copiado.');}catch(e){pixMessage('Não foi possível copiar o código.',true)}});
 async function cloudSaveSettings(){
@@ -1688,31 +1575,14 @@ function renderIntegrityPanel(){
   ? 'A contagem da nuvem é da última conferência confirmada. Quantidades iguais não garantem que o conteúdo de cada lançamento seja idêntico.'
   : 'Entre na sua conta para conferir a quantidade de lançamentos na nuvem. As cópias automáticas ficam somente neste navegador.';
 }
-$('integrityCheckBtn').addEventListener('click',async()=>{
-  const btn=$('integrityCheckBtn');
-  renderIntegrityPanel();
-  if(!authUser||!sb){
-   $('integrityNote').textContent='Entre na sua conta para conferir a quantidade de lançamentos armazenados na nuvem.';
-   return;
-  }
-  if(!navigator.onLine){
-   $('integrityNote').textContent='Sem conexão. A conferência da nuvem não foi realizada. Seus dados locais permanecem preservados.';
-   return;
-  }
-  btn.disabled=true;btn.textContent='Conferindo…';
-  $('integrityNote').textContent='Consultando a quantidade de lançamentos na nuvem…';
-  try{
-   const {count,error}=await sb.from('work_entries').select('entry_id',{count:'exact',head:true}).eq('user_id',authUser.id);
-   if(error)throw error;
-   localStorage.setItem(integrityMetaKey(),JSON.stringify({cloudCount:count||0,checkedAt:new Date().toISOString()}));
-   renderIntegrityPanel();
-   $('integrityNote').textContent=`Conferência concluída: ${count||0} lançamento(s) encontrados na nuvem. A comparação é por quantidade, não valida o conteúdo de cada registro.`;
-  }catch(err){
-   $('integrityNote').textContent='Não foi possível consultar a nuvem: '+(err.message||String(err));
-  }finally{
-   btn.disabled=false;btn.textContent='Conferir agora';
-  }
- });
+$('integrityCheckBtn').addEventListener('click',()=>{
+ renderIntegrityPanel();
+ if(!authUser||!sb){msg('Entre na sua conta para conferir os dados da nuvem.',true);return;}
+ $('integrityCheckBtn').disabled=true;
+ $('integrityNote').textContent='Consultando a nuvem…';
+ syncCloud().then(()=>{renderIntegrityPanel();}).catch(()=>{renderIntegrityPanel();})
+ .finally(()=>{$('integrityCheckBtn').disabled=false;});
+});
 function setSyncStatus(state,message,showRetry=false){
  const panel=$('syncStatusText')?.closest('.sync-panel');
  if(!panel)return;
@@ -1849,27 +1719,17 @@ function resetForm(){
  $('break2').value='yes';$('dayType').value='work';$('obs').value='';toggleDayType();
 }
 function beginEdit(id){
- const e=entries.find(x=>String(x.id)===String(id));
- if(!e){msg('Não foi possível localizar este lançamento. Atualize a lista e tente novamente.',true);return;}
- // A aba de edição precisa ser ativada antes de abrir o formulário.
- // Caso contrário, entryCard permanece com hidden=true no iPhone e o clique parece não funcionar.
- if(typeof activateSectionTab==='function') activateSectionTab('entryCard',false);
  openEntryForm();
+ const e=entries.find(x=>String(x.id)===String(id));if(!e)return;
  editingId=e.id;
- $('date').value=e.date||'';
- $('start').value=e.start||'';
- $('end').value=e.end||'';
- $('breakStart').value=e.breakStart||'';
- $('breakEnd').value=e.breakEnd||'';
- $('break2').value=e.hasBreak?'yes':'no';
- $('dayType').value=e.dayType||'work';
- $('obs').value=e.obs||'';
- toggleDayType();
+ $('date').value=e.date;$('start').value=e.start;$('end').value=e.end;
+ $('breakStart').value=e.breakStart||'';$('breakEnd').value=e.breakEnd||'';
+ $('break2').value=e.hasBreak?'yes':'no';$('dayType').value=e.dayType||'work';$('obs').value=e.obs||'';toggleDayType();
  $('date').disabled=true;
  $('saveBtn').textContent='✓ Salvar alterações';
  $('cancelEdit').hidden=false;
  msg('Editando lançamento. Altere os campos e toque em Salvar alterações.');
- $('entryCard').scrollIntoView({behavior:'smooth',block:'start'});
+ $('date').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function openEntryForm(dateValue){
  const card=$('entryCard');
@@ -1948,8 +1808,13 @@ function renderSalary(list,ev,nv,dsr){
  $('absenceDayPay').textContent=money(abs.dayDiscount);
  $('absenceDsrPay').textContent=money(abs.dsrDiscount);
  $('deductionsPay').textContent=money(total);
- $('netPay').textContent=money(Math.max(0,gross-total));
- $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Faltas não justificadas: ${abs.count} dia(s), em ${abs.weeks} semana(s) com perda estimada de DSR. Estimativa de salário/30 por dia e um DSR por semana afetada. Confirme a aplicação com o RH/convenção coletiva.`;
+ const net=Math.max(0,gross-total);
+ $('netPay').textContent=money(net);
+ const selectedMonth=$('month').value||'';
+ const monthExtra=selectedMonth?financeMonthMetrics(selectedMonth).extraValue:0;
+ $('extraPay').textContent=money(monthExtra);
+ $('combinedPay').textContent=money(gross+monthExtra);
+ $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Faltas não justificadas: ${abs.count} dia(s), em ${abs.weeks} semana(s) com perda estimada de DSR. O valor total das horas extras do mês selecionado é exibido separadamente. O total bruto apresentado no painel soma salário-base + horas extras; as horas extras não entram no cálculo de INSS/IRRF desta simulação. O DSR das horas adicionais permanece separado no painel financeiro. Confirme a aplicação com o RH/convenção coletiva.`;
 }
 function paymentStorageKey(k){return dataKey()+'__payment_received__'+k;}
 function updatePaymentComparison(){const k=$('month').value||'',saved=k?localStorage.getItem(paymentStorageKey(k)):null;if(document.activeElement!==$('paymentReceived'))$('paymentReceived').value=saved??'';const expected=k?financeMonthMetrics(k).total:0,raw=$('paymentReceived').value;$('paymentExpected').textContent=money(expected||0);$('paymentDifference').textContent=raw===''?'—':money(Number(raw)-expected);}
@@ -2005,11 +1870,9 @@ $('cancelEdit').onclick=()=>{resetForm();closeEntryForm();msg('Edição cancelad
 $('cancelEntry').onclick=()=>{resetForm();closeEntryForm();msg('Registro cancelado. O formulário foi fechado.')};
 $('clearForm').onclick=()=>{resetForm();msg('Campos limpos.')};
 $('rows').onclick=async ev=>{
- const target=ev.target instanceof Element?ev.target:null;
- if(!target)return;
- let edit=target.closest('button[data-edit]')?.dataset.edit;
- let duplicate=target.closest('button[data-dup]')?.dataset.dup;
- let id=target.closest('button[data-del]')?.dataset.del;
+ let edit=ev.target.closest('[data-edit]')?.dataset.edit;
+ let duplicate=ev.target.closest('[data-dup]')?.dataset.dup;
+ let id=ev.target.closest('[data-del]')?.dataset.del;
  if(edit){beginEdit(edit);return}
  if(duplicate){
   const source=entries.find(x=>String(x.id)===String(duplicate));if(!source)return;
@@ -2238,16 +2101,7 @@ function renderHistory(){
   [...groups.get(year).keys()].sort((a,b)=>b.localeCompare(a)).forEach(month=>{
    const list=groups.get(year).get(month),m=historyMonthSummary(list),row=document.createElement('div');row.className='history-month';
    const label=document.createElement('div');const monthName=new Date(Number(year),Number(month)-1,1).toLocaleDateString('pt-BR',{month:'long'});label.innerHTML=`<strong>${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</strong><small>${list.length} marcação(ões) · ${fmtHours(m.worked)} trabalhadas · ${fmtHours(m.extra)} adicionais · ${money(m.value)}</small>`;
-   const btn=document.createElement('button');btn.type='button';btn.textContent='Abrir mês';btn.addEventListener('click',()=>{
-     const monthKey=`${year}-${month}`;
-     $('month').value=monthKey;
-     $('reportMonth').value=monthKey;
-     const firstEntry=list.slice().sort((a,b)=>a.date.localeCompare(b.date))[0];
-     $('date').value=firstEntry?.date||`${monthKey}-01`;
-     render();
-     if(typeof activateSectionTab==='function')activateSectionTab('calendarCard',false);
-     $('calendarCard')?.scrollIntoView({behavior:'smooth',block:'start'});
-    });
+   const btn=document.createElement('button');btn.type='button';btn.textContent='Abrir mês';btn.addEventListener('click',()=>{$('month').value=`${year}-${month}`;$('reportMonth').value=$('month').value;render();$('summaryCard').scrollIntoView({behavior:'smooth',block:'start'});});
    row.append(label,btn);details.appendChild(row);
   });host.appendChild(details);
  });
@@ -2482,36 +2336,7 @@ restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 load();
 setSyncStatus(authUser?'pending':'local',authUser?'Conta conectada. Verificando sincronização…':'Salvo somente neste aparelho. Entre na conta para sincronizar.');
 $('reminderEnabled').addEventListener('change',e=>{localStorage.setItem(dataKey()+'__reminder_enabled',e.target.checked?'1':'0');checkInAppReminders();});
-function pendingWorkDates(){
-  const now=new Date(),monthKey=$('month').value||`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
-  const [y,m]=monthKey.split('-').map(Number);if(!y||!m)return [];
-  const currentKey=`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
-  const isCurrent=monthKey===currentKey;
-  const isFuture=monthKey>currentKey;
-  const lastDay=isFuture?0:(isCurrent?now.getDate():new Date(y,m,0).getDate());
-  const seen=new Set(entries.map(e=>e.date)),pending=[];
-  for(let day=1;day<=lastDay;day++){
-   const date=`${y}-${pad(m)}-${pad(day)}`,dow=new Date(date+'T12:00:00').getDay();
-   if(dow!==0&&dow!==6&&!seen.has(date))pending.push(date);
-  }
-  return pending;
-}
-$('checkRemindersBtn').addEventListener('click',()=>{
-  const pending=pendingWorkDates();
-  const selectedMonth=$('month').value||`${today.getFullYear()}-${pad(today.getMonth()+1)}`;
-  const target=pending[0]||`${selectedMonth}-01`;
-  const monthKey=target.slice(0,7);
-  $('month').value=monthKey;
-  $('date').value=target;
-  if($('reportMonth'))$('reportMonth').value=monthKey;
-  render();
-  if(typeof activateSectionTab==='function')activateSectionTab('calendarCard',false);
-  $('calendarHelp').textContent=pending.length
-   ? `${pending.length} dia(s) útil(eis) pendente(s). Primeiro dia a conferir: ${target.split('-').reverse().join('/')}. Toque na data no calendário para registrar.`
-   : 'Nenhuma pendência encontrada neste período. O calendário foi aberto.';
-  $('calendarCard')?.scrollIntoView({behavior:'smooth',block:'start'});
-  checkInAppReminders();
-});
+$('checkRemindersBtn').addEventListener('click',checkInAppReminders);
 $('savePaymentBtn').addEventListener('click',()=>{const k=$('month').value||'',v=$('paymentReceived').value;if(!k||v===''||!Number.isFinite(Number(v))||Number(v)<0){$('paymentMessage').textContent='Informe um valor válido e selecione o mês.';return;}localStorage.setItem(paymentStorageKey(k),String(Number(v)));updatePaymentComparison();$('paymentMessage').textContent='Conferência salva neste aparelho.';});
 $('clearPaymentBtn').addEventListener('click',()=>{const k=$('month').value||'';if(k)localStorage.removeItem(paymentStorageKey(k));$('paymentReceived').value='';updatePaymentComparison();});
 $('month').addEventListener('change',()=>{if($('reportMonth'))$('reportMonth').value=$('month').value;updatePaymentComparison();checkInAppReminders();});
