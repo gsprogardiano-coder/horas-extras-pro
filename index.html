@@ -733,210 +733,71 @@ input,select,textarea{
 }
 
 
-/* MENU PRINCIPAL — BOTÕES SIMÉTRICOS E RESPONSIVOS */
+/* GARDY LIQUID GLASS — menu translúcido inspirado no iOS */
 #sectionTabs.section-tabs{
   display:grid!important;
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
-  align-items:stretch!important;
-  justify-items:stretch!important;
   gap:12px!important;
-  width:min(100%,1120px)!important;
-  margin:0 auto 18px!important;
-  padding:16px!important;
+  padding:12px 14px!important;
+  overflow:visible!important;
+  perspective:900px;
 }
-#sectionTabs.section-tabs > button{
+#sectionTabs.section-tabs button{
+  position:relative!important;
+  isolation:isolate;
   display:flex!important;
   align-items:center!important;
   justify-content:center!important;
-  width:100%!important;
   min-width:0!important;
-  min-height:64px!important;
-  height:100%!important;
-  margin:0!important;
-  padding:12px 10px!important;
-  border:1px solid #484b53!important;
-  border-radius:18px!important;
-  background:linear-gradient(145deg,#24252b,#17181d)!important;
-  color:#f5f5f7!important;
-  box-shadow:inset 0 1px #ffffff0b,0 4px 12px #0006!important;
-  font-size:clamp(12px,1.45vw,16px)!important;
-  font-weight:800!important;
-  line-height:1.25!important;
-  text-align:center!important;
-  white-space:normal!important;
-  overflow-wrap:anywhere!important;
-  word-break:normal!important;
-}
-#sectionTabs.section-tabs > button.active{
-  background:linear-gradient(110deg,#ff263b,#bd001b)!important;
-  border-color:#ff5967!important;
-  color:#fff!important;
-  box-shadow:0 4px 16px #ff263b42,0 0 16px #ff263b25!important;
-}
-#sectionTabs.section-tabs > button:active{transform:scale(.985)}
-@media(max-width:560px){
-  #sectionTabs.section-tabs{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-    gap:8px!important;
-    padding:10px 8px!important;
-  }
-  #sectionTabs.section-tabs > button{
-    min-height:68px!important;
-    padding:8px 4px!important;
-    border-radius:15px!important;
-    font-size:clamp(10px,2.8vw,12px)!important;
-    line-height:1.2!important;
-  }
-}
-@media(max-width:340px){
-  #sectionTabs.section-tabs{gap:7px!important;padding:9px!important}
-  #sectionTabs.section-tabs > button{font-size:12px!important;min-height:54px!important}
-}
-
-
-
-/* LIQUID GLASS — menu principal, gerenciamento de conta e sair */
-#sectionTabs.section-tabs > button,
-.profile-manage-wrap > button,
-#profileEditor .actions > button {
-  position:relative!important;
-  isolation:isolate;
-  overflow:hidden;
-  color:#fff!important;
-  border:1px solid rgba(255,255,255,.24)!important;
-  border-top-color:rgba(255,255,255,.42)!important;
-  border-radius:18px!important;
+  min-height:92px!important;
+  padding:14px 9px!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.28)!important;
+  border-radius:27px!important;
+  color:rgba(255,255,255,.97)!important;
   background:
-    linear-gradient(145deg,rgba(255,255,255,.19),rgba(255,255,255,.045) 42%,rgba(255,255,255,.075)),
-    linear-gradient(120deg,rgba(80,85,100,.30),rgba(20,21,28,.56))!important;
-  -webkit-backdrop-filter:blur(22px) saturate(175%)!important;
-  backdrop-filter:blur(22px) saturate(175%)!important;
+    radial-gradient(130% 95% at 12% 0%,rgba(255,255,255,.22),transparent 55%),
+    linear-gradient(145deg,rgba(255,255,255,.17),rgba(255,255,255,.055) 48%,rgba(255,255,255,.095))!important;
+  -webkit-backdrop-filter:blur(24px) saturate(185%) contrast(108%)!important;
+  backdrop-filter:blur(24px) saturate(185%) contrast(108%)!important;
   box-shadow:
-    inset 0 1px 1px rgba(255,255,255,.28),
-    inset 0 -1px 1px rgba(0,0,0,.30),
-    0 7px 20px rgba(0,0,0,.34),
-    0 0 0 1px rgba(255,255,255,.035)!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.45);
-  transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease!important;
+    inset 0 1.5px 1px rgba(255,255,255,.42),
+    inset 0 -1px 1px rgba(255,255,255,.10),
+    inset 1px 0 1px rgba(255,255,255,.12),
+    0 10px 24px rgba(0,0,0,.28),
+    0 2px 5px rgba(0,0,0,.24)!important;
+  text-shadow:0 1px 5px rgba(0,0,0,.55)!important;
+  font-size:clamp(11px,3.1vw,14px)!important;
+  font-weight:800!important;
+  line-height:1.2!important;
+  white-space:normal!important;
+  text-align:center!important;
+  transform:translateZ(0);
+  transition:transform .22s ease,background .22s ease,border-color .22s ease,box-shadow .22s ease!important;
 }
-#sectionTabs.section-tabs > button::before,
-.profile-manage-wrap > button::before,
-#profileEditor .actions > button::before {
-  content:"";
-  position:absolute;
-  z-index:-1;
-  inset:0;
-  border-radius:inherit;
-  pointer-events:none;
-  background:
-    linear-gradient(118deg,rgba(255,255,255,.22),transparent 27%,transparent 68%,rgba(255,255,255,.07)),
-    radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.16),transparent 62%);
+#sectionTabs.section-tabs button::before{
+  content:"";position:absolute;inset:1px;z-index:-1;pointer-events:none;border-radius:25px;
+  background:linear-gradient(125deg,rgba(255,255,255,.24),transparent 28%,transparent 66%,rgba(255,255,255,.075));
   opacity:.9;
 }
-#sectionTabs.section-tabs > button::after,
-.profile-manage-wrap > button::after,
-#profileEditor .actions > button::after {
-  content:"";
-  position:absolute;
-  z-index:1;
-  left:12%;
-  right:12%;
-  top:0;
-  height:1px;
-  pointer-events:none;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);
-  opacity:.75;
+#sectionTabs.section-tabs button::after{
+  content:"";position:absolute;left:12%;right:12%;top:1px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent);opacity:.72;
 }
-#sectionTabs.section-tabs > button:hover,
-.profile-manage-wrap > button:hover,
-#profileEditor .actions > button:hover {
-  transform:translateY(-2px)!important;
-  border-color:rgba(255,255,255,.48)!important;
-  box-shadow:
-    inset 0 1px 1px rgba(255,255,255,.36),
-    0 10px 25px rgba(0,0,0,.42),
-    0 0 18px rgba(255,255,255,.09)!important;
-}
-#sectionTabs.section-tabs > button.active {
-  border-color:rgba(255,105,120,.82)!important;
-  border-top-color:rgba(255,210,215,.85)!important;
-  background:
-    linear-gradient(145deg,rgba(255,255,255,.27),rgba(255,255,255,.045) 42%,rgba(255,255,255,.09)),
-    linear-gradient(120deg,rgba(255,38,59,.92),rgba(150,0,24,.88))!important;
-  box-shadow:
-    inset 0 1px 1px rgba(255,255,255,.42),
-    inset 0 -1px 1px rgba(80,0,12,.34),
-    0 8px 24px rgba(0,0,0,.38),
-    0 0 22px rgba(255,38,59,.30)!important;
-}
-#sectionTabs.section-tabs > button.active::before {
-  background:
-    linear-gradient(118deg,rgba(255,255,255,.30),transparent 34%,transparent 68%,rgba(255,255,255,.10)),
-    radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.23),transparent 65%);
-}
-.profile-manage-wrap > #signOutBtn {
-  background:
-    linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.025)),
-    linear-gradient(120deg,rgba(105,30,43,.48),rgba(35,13,20,.68))!important;
-  border-color:rgba(255,125,140,.34)!important;
-}
-#profileEditor .actions > button.secondary {
-  background:
-    linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.035)),
-    linear-gradient(120deg,rgba(75,78,88,.40),rgba(25,26,32,.68))!important;
-}
-#sectionTabs.section-tabs > button:active,
-.profile-manage-wrap > button:active,
-#profileEditor .actions > button:active {
-  transform:scale(.975)!important;
-}
-@media(max-width:560px){
-  #sectionTabs.section-tabs > button,
-  .profile-manage-wrap > button,
-  #profileEditor .actions > button {
-    -webkit-backdrop-filter:blur(18px) saturate(165%)!important;
-    backdrop-filter:blur(18px) saturate(165%)!important;
-  }
-}
-@media(prefers-reduced-motion:reduce){
-  #sectionTabs.section-tabs > button,
-  .profile-manage-wrap > button,
-  #profileEditor .actions > button {transition:none!important}
-}
-
-
-
-/* CORREÇÃO: cartões de integridade com fundo e texto legíveis no tema escuro */
-#integrityPanel{
-  color:#f4f5f7!important;
-  background:linear-gradient(145deg,rgba(22,24,30,.97),rgba(9,10,14,.97))!important;
-  border:1px solid #555b66!important;
-}
-#integrityPanel h3{color:#fff!important}
-#integrityPanel .integrity-grid>div{
-  background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.035))!important;
-  border:1px solid rgba(255,255,255,.18)!important;
-  color:#f4f5f7!important;
-  box-shadow:inset 0 1px rgba(255,255,255,.10),0 4px 12px rgba(0,0,0,.20)!important;
-}
-#integrityPanel .integrity-grid small{
-  color:#c7cbd3!important;
-  opacity:1!important;
-}
-#integrityPanel .integrity-grid strong{
-  color:#ff596b!important;
-  text-shadow:0 0 12px rgba(255,38,59,.20);
-}
-#integrityPanel .integrity-grid span{
-  color:#e1e3e8!important;
-  opacity:1!important;
-}
-#integrityPanel #integrityNote{color:#b8bec8!important}
-#integrityPanel #integrityCheckBtn{
-  background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.045)),linear-gradient(120deg,#24272e,#121419)!important;
+#sectionTabs.section-tabs button.active{
   color:#fff!important;
-  border:1px solid rgba(255,255,255,.28)!important;
+  border-color:rgba(255,170,185,.72)!important;
+  background:
+    radial-gradient(130% 100% at 15% 0%,rgba(255,255,255,.34),transparent 58%),
+    linear-gradient(145deg,rgba(255,75,105,.76),rgba(190,15,55,.56) 55%,rgba(110,8,32,.62))!important;
+  -webkit-backdrop-filter:blur(28px) saturate(210%) contrast(112%)!important;
+  backdrop-filter:blur(28px) saturate(210%) contrast(112%)!important;
+  box-shadow:inset 0 1.5px 1px rgba(255,255,255,.55),inset 0 -1px 1px rgba(255,255,255,.13),0 0 0 1px rgba(255,80,115,.18),0 12px 28px rgba(170,8,48,.28)!important;
 }
+#sectionTabs.section-tabs button:active{transform:scale(.965)!important}
+@media(hover:hover){#sectionTabs.section-tabs button:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.52)!important;box-shadow:inset 0 1.5px 1px rgba(255,255,255,.52),0 14px 30px rgba(0,0,0,.34)!important}}
+@media(max-width:390px){#sectionTabs.section-tabs{gap:8px!important;padding:10px!important}#sectionTabs.section-tabs button{min-height:82px!important;border-radius:23px!important;padding:11px 6px!important}}
+@media(prefers-reduced-motion:reduce){#sectionTabs.section-tabs button{transition:none!important}}
 
 </style>
 
