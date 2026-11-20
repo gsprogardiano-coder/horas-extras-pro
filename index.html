@@ -920,7 +920,7 @@ button#saveBtn,button.primary{
 }
 @media(prefers-reduced-motion:reduce){button{transition:none!important}}
 
-</style>
+\n/* Corrige visibilidade dos painéis e garante abertura pelo botão Registrar jornada */\n[hidden]{display:none!important}\n</style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
@@ -2593,6 +2593,7 @@ function activateSectionTab(target,scroll=true){
   tools.hidden=!showTools;
   $('salarySettingsPanel').hidden=valid!=='salarySettingsPanel';
   $('entryCard').hidden=valid!=='entryCard';
+  if(valid==='entryCard')$('entryCard').classList.remove('is-collapsed');
  }
  document.querySelectorAll('#sectionTabs [data-tab]').forEach(btn=>{
   const active=btn.dataset.tab===valid;btn.classList.toggle('active',active);btn.setAttribute('aria-selected',active?'true':'false');
