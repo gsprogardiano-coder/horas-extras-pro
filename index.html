@@ -776,20 +776,132 @@ input,select,textarea{
 #sectionTabs.section-tabs > button:active{transform:scale(.985)}
 @media(max-width:560px){
   #sectionTabs.section-tabs{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:9px!important;
-    padding:12px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+    padding:10px 8px!important;
   }
   #sectionTabs.section-tabs > button{
-    min-height:58px!important;
-    padding:10px 8px!important;
-    border-radius:16px!important;
-    font-size:13px!important;
+    min-height:68px!important;
+    padding:8px 4px!important;
+    border-radius:15px!important;
+    font-size:clamp(10px,2.8vw,12px)!important;
+    line-height:1.2!important;
   }
 }
 @media(max-width:340px){
   #sectionTabs.section-tabs{gap:7px!important;padding:9px!important}
   #sectionTabs.section-tabs > button{font-size:12px!important;min-height:54px!important}
+}
+
+
+
+/* LIQUID GLASS — menu principal, gerenciamento de conta e sair */
+#sectionTabs.section-tabs > button,
+.profile-manage-wrap > button,
+#profileEditor .actions > button {
+  position:relative!important;
+  isolation:isolate;
+  overflow:hidden;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  border-top-color:rgba(255,255,255,.42)!important;
+  border-radius:18px!important;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.19),rgba(255,255,255,.045) 42%,rgba(255,255,255,.075)),
+    linear-gradient(120deg,rgba(80,85,100,.30),rgba(20,21,28,.56))!important;
+  -webkit-backdrop-filter:blur(22px) saturate(175%)!important;
+  backdrop-filter:blur(22px) saturate(175%)!important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.28),
+    inset 0 -1px 1px rgba(0,0,0,.30),
+    0 7px 20px rgba(0,0,0,.34),
+    0 0 0 1px rgba(255,255,255,.035)!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.45);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease!important;
+}
+#sectionTabs.section-tabs > button::before,
+.profile-manage-wrap > button::before,
+#profileEditor .actions > button::before {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  background:
+    linear-gradient(118deg,rgba(255,255,255,.22),transparent 27%,transparent 68%,rgba(255,255,255,.07)),
+    radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.16),transparent 62%);
+  opacity:.9;
+}
+#sectionTabs.section-tabs > button::after,
+.profile-manage-wrap > button::after,
+#profileEditor .actions > button::after {
+  content:"";
+  position:absolute;
+  z-index:1;
+  left:12%;
+  right:12%;
+  top:0;
+  height:1px;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);
+  opacity:.75;
+}
+#sectionTabs.section-tabs > button:hover,
+.profile-manage-wrap > button:hover,
+#profileEditor .actions > button:hover {
+  transform:translateY(-2px)!important;
+  border-color:rgba(255,255,255,.48)!important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.36),
+    0 10px 25px rgba(0,0,0,.42),
+    0 0 18px rgba(255,255,255,.09)!important;
+}
+#sectionTabs.section-tabs > button.active {
+  border-color:rgba(255,105,120,.82)!important;
+  border-top-color:rgba(255,210,215,.85)!important;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.27),rgba(255,255,255,.045) 42%,rgba(255,255,255,.09)),
+    linear-gradient(120deg,rgba(255,38,59,.92),rgba(150,0,24,.88))!important;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.42),
+    inset 0 -1px 1px rgba(80,0,12,.34),
+    0 8px 24px rgba(0,0,0,.38),
+    0 0 22px rgba(255,38,59,.30)!important;
+}
+#sectionTabs.section-tabs > button.active::before {
+  background:
+    linear-gradient(118deg,rgba(255,255,255,.30),transparent 34%,transparent 68%,rgba(255,255,255,.10)),
+    radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.23),transparent 65%);
+}
+.profile-manage-wrap > #signOutBtn {
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.025)),
+    linear-gradient(120deg,rgba(105,30,43,.48),rgba(35,13,20,.68))!important;
+  border-color:rgba(255,125,140,.34)!important;
+}
+#profileEditor .actions > button.secondary {
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.035)),
+    linear-gradient(120deg,rgba(75,78,88,.40),rgba(25,26,32,.68))!important;
+}
+#sectionTabs.section-tabs > button:active,
+.profile-manage-wrap > button:active,
+#profileEditor .actions > button:active {
+  transform:scale(.975)!important;
+}
+@media(max-width:560px){
+  #sectionTabs.section-tabs > button,
+  .profile-manage-wrap > button,
+  #profileEditor .actions > button {
+    -webkit-backdrop-filter:blur(18px) saturate(165%)!important;
+    backdrop-filter:blur(18px) saturate(165%)!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #sectionTabs.section-tabs > button,
+  .profile-manage-wrap > button,
+  #profileEditor .actions > button {transition:none!important}
 }
 
 </style>
