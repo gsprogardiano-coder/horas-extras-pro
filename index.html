@@ -799,6 +799,64 @@ input,select,textarea{
 @media(max-width:390px){#sectionTabs.section-tabs{gap:8px!important;padding:10px!important}#sectionTabs.section-tabs button{min-height:82px!important;border-radius:23px!important;padding:11px 6px!important}}
 @media(prefers-reduced-motion:reduce){#sectionTabs.section-tabs button{transition:none!important}}
 
+
+
+/* LIQUID GLASS — calendário e componentes de dados */
+#calendarCard{
+ background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.025) 55%,rgba(255,255,255,.065))!important;
+ border:1px solid rgba(255,255,255,.22)!important;
+ box-shadow:inset 0 1px 1px rgba(255,255,255,.26),0 18px 42px rgba(0,0,0,.28)!important;
+ -webkit-backdrop-filter:blur(28px) saturate(180%)!important;
+ backdrop-filter:blur(28px) saturate(180%)!important;
+}
+#calendarCard .calendar-toolbar button,
+#calendarCard .calday{
+ color:rgba(255,255,255,.96)!important;
+ border:1px solid rgba(255,255,255,.22)!important;
+ background:linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.045))!important;
+ -webkit-backdrop-filter:blur(18px) saturate(175%)!important;
+ backdrop-filter:blur(18px) saturate(175%)!important;
+ box-shadow:inset 0 1px 1px rgba(255,255,255,.22),0 5px 12px rgba(0,0,0,.16)!important;
+ border-radius:13px!important;
+}
+#calendarCard .calhead{color:rgba(255,255,255,.62)!important}
+#calendarCard .calday.has{background:linear-gradient(145deg,rgba(38,205,133,.48),rgba(8,112,72,.35))!important;border-color:rgba(110,255,190,.48)!important}
+#calendarCard .calday.off{background:linear-gradient(145deg,rgba(255,190,70,.28),rgba(140,88,18,.22))!important;border-color:rgba(255,208,120,.38)!important}
+#calendarCard .calday.absence-justified,#calendarCard .calday.absence-unjustified{background:linear-gradient(145deg,rgba(255,90,115,.28),rgba(130,20,45,.22))!important;border-color:rgba(255,150,165,.36)!important}
+#calendarCard .calday.today{outline:2px solid rgba(110,255,190,.9)!important;outline-offset:1px}
+#calendarCard .calday.selected-day{box-shadow:0 0 0 2px rgba(95,255,190,.65),inset 0 1px 1px rgba(255,255,255,.3)!important}
+#calendarCard .calendar-toolbar strong,#calendarCard #calendarHelp{color:rgba(255,255,255,.88)!important}
+
+#annualPerformanceCard{min-width:0;overflow:hidden}
+#annualPerformanceCard .annual-chart{
+ box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow:hidden;
+ display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(3px,1vw,10px);
+ align-items:stretch;min-height:190px;padding:16px 10px 12px;margin:14px 0;
+ border:1px solid rgba(255,255,255,.16);border-radius:20px;
+ background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.018));
+ -webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);
+}
+#annualPerformanceCard .annual-month{
+ box-sizing:border-box;min-width:0;width:100%;height:158px;display:grid;
+ grid-template-rows:18px minmax(0,1fr) 16px;align-items:end;justify-items:center;gap:5px;overflow:hidden;
+}
+#annualPerformanceCard .annual-value{font-size:clamp(8px,1.2vw,11px);line-height:1;color:rgba(220,255,237,.9);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:clip}
+#annualPerformanceCard .annual-bar-track{box-sizing:border-box;position:relative;width:min(100%,34px);height:100%;min-height:0;display:flex;align-items:end;justify-content:center;overflow:hidden;border-radius:10px 10px 4px 4px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08)}
+#annualPerformanceCard .annual-bar{
+ width:100%;min-height:0;border:0;border-radius:9px 9px 3px 3px;
+ background:linear-gradient(180deg,#8dffc1 0%,#27d982 45%,#078c55 100%);
+ box-shadow:0 0 18px rgba(39,217,130,.28),inset 0 1px 1px rgba(255,255,255,.65);
+ transition:height .45s cubic-bezier(.2,.8,.2,1);
+}
+#annualPerformanceCard .annual-month small{font-size:clamp(8px,1.2vw,11px);line-height:1;color:rgba(255,255,255,.68);white-space:nowrap}
+#annualPerformanceCard .annual-stats .stat{min-width:0}
+@media(max-width:600px){
+ #annualPerformanceCard .annual-chart{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;padding:12px 8px}
+ #annualPerformanceCard .annual-month{height:126px}
+ #annualPerformanceCard .annual-value{font-size:10px}
+ #annualPerformanceCard .annual-bar-track{width:min(65%,38px)}
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1268,8 +1326,22 @@ function makePixPayload(amount){
  payload+=tlv('58','BR')+tlv('59',PIX_RECEIVER)+tlv('60',PIX_CITY)+tlv('62',tlv('05','***'))+'6304';
  return payload+crc16(payload);
 }
+let qrCodeLoadPromise=null;
+async function ensureQRCodeLibrary(){
+ if(window.QRCode)return window.QRCode;
+ if(qrCodeLoadPromise)return qrCodeLoadPromise;
+ qrCodeLoadPromise=new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='https://unpkg.com/qrcode@1.5.4/build/qrcode.min.js';
+  script.async=true;
+  script.onload=()=>window.QRCode?resolve(window.QRCode):reject(new Error('Biblioteca QR não inicializada'));
+  script.onerror=()=>reject(new Error('Falha ao carregar biblioteca QR'));
+  document.head.appendChild(script);
+ });
+ return qrCodeLoadPromise;
+}
 $('pixAmount').addEventListener('change',()=>{$('pixCustomWrap').hidden=$('pixAmount').value!=='0';$('pixQrWrap').style.display='none';});
-$('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}if(!window.QRCode){pixMessage('Gerador de QR indisponível. Você ainda pode copiar a chave Pix.',true);return}const payload=makePixPayload(amount);await QRCode.toCanvas($('pixQr'),payload,{width:220,margin:1,errorCorrectionLevel:'M'});$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
+$('pixGenerateBtn').addEventListener('click',async()=>{try{let amount=$('pixAmount').value==='0'?Number($('pixCustom').value):Number($('pixAmount').value);if(!Number.isFinite(amount)||amount<=0||amount>999999.99){pixMessage('Informe um valor válido maior que zero.',true);return}if(!window.QRCode){try{await ensureQRCodeLibrary()}catch(loadError){pixMessage('Não foi possível carregar o gerador de QR Code. Verifique a conexão e tente novamente; a chave Pix continua disponível.',true);return}}if(!window.QRCode||typeof window.QRCode.toCanvas!=='function'){pixMessage('Gerador de QR indisponível. Você ainda pode copiar a chave Pix.',true);return}const payload=makePixPayload(amount);await window.QRCode.toCanvas($('pixQr'),payload,{width:220,margin:1,errorCorrectionLevel:'M'});$('pixQrWrap').style.display='block';$('pixCopyPayloadBtn').dataset.payload=payload;pixMessage('QR Code gerado. Confira os dados do recebedor no seu banco antes de pagar.');}catch(e){pixMessage('Não foi possível gerar o QR Code. Use a opção de copiar a chave.',true)}});
 $('pixCopyBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(PIX_KEY);pixMessage('Chave Pix copiada.');}catch(e){pixMessage('Não foi possível copiar automaticamente. Chave: '+PIX_KEY,true)}});
 $('pixCopyPayloadBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('pixCopyPayloadBtn').dataset.payload||'');pixMessage('Código Pix copiado.');}catch(e){pixMessage('Não foi possível copiar o código.',true)}});
 async function cloudSaveSettings(){
@@ -1787,13 +1859,15 @@ function resetForm(){
  $('break2').value='yes';$('dayType').value='work';$('obs').value='';toggleDayType();
 }
 function beginEdit(id){
+ const e=entries.find(x=>String(x.id)===String(id));
+ if(!e){msg('Não foi possível localizar este lançamento. Atualize a lista e tente novamente.',true);return;}
+ if(typeof activateSectionTab==='function')activateSectionTab('entryCard',false);
  openEntryForm();
- const e=entries.find(x=>String(x.id)===String(id));if(!e)return;
  editingId=e.id;
- $('date').value=e.date;$('start').value=e.start;$('end').value=e.end;
+ $('date').value=e.date;$('start').value=e.start||'';$('end').value=e.end||'';
  $('breakStart').value=e.breakStart||'';$('breakEnd').value=e.breakEnd||'';
  $('break2').value=e.hasBreak?'yes':'no';$('dayType').value=e.dayType||'work';$('obs').value=e.obs||'';toggleDayType();
- $('date').disabled=true;
+ $('date').disabled=false;
  $('saveBtn').textContent='✓ Salvar alterações';
  $('cancelEdit').hidden=false;
  msg('Editando lançamento. Altere os campos e toque em Salvar alterações.');
@@ -1887,7 +1961,24 @@ function renderSalary(list,ev,nv,dsr){
 function paymentStorageKey(k){return dataKey()+'__payment_received__'+k;}
 function updatePaymentComparison(){const k=$('month').value||'',saved=k?localStorage.getItem(paymentStorageKey(k)):null;if(document.activeElement!==$('paymentReceived'))$('paymentReceived').value=saved??'';const expected=k?financeMonthMetrics(k).total:0,raw=$('paymentReceived').value;$('paymentExpected').textContent=money(expected||0);$('paymentDifference').textContent=raw===''?'—':money(Number(raw)-expected);}
 function updateSmartDashboard(list,extra,extraValue,dsr){const k=$('month').value||'',now=new Date(),upto=k===`${now.getFullYear()}-${pad(now.getMonth()+1)}`?now.getDate():(k?new Date(Number(k.slice(0,4)),Number(k.slice(5,7)),0).getDate():0),seen=new Set(list.map(e=>e.date));let missing=0;for(let d=1;d<=upto;d++){const date=k+'-'+pad(d),dow=new Date(date+'T12:00:00').getDay();if(dow!==0&&dow!==6&&!seen.has(date))missing++;}$('dashOvertime').textContent=fmtHours(Math.round(extra*60));$('dashValue').textContent=money(extraValue+dsr);$('dashWorkdays').textContent=String(list.filter(e=>(e.dayType||'work')==='work').length);$('dashMissing').textContent=String(missing);$('dashInsight').textContent=missing?`${missing} dia(s) útil(eis) sem lançamento até a data de referência. Confira se foram trabalho, folga ou ausência.`:'Nenhum dia útil pendente até a data de referência.';}
-function checkInAppReminders(){const enabled=localStorage.getItem(dataKey()+'__reminder_enabled')==='1';$('reminderEnabled').checked=enabled;if(!enabled){$('reminderMessage').textContent='Lembretes desativados.';return;}const k=$('month').value||'',now=new Date(),upto=k===`${now.getFullYear()}-${pad(now.getMonth()+1)}`?now.getDate():0,seen=new Set(entries.map(e=>e.date)),pending=[];for(let d=1;d<=upto;d++){const date=k+'-'+pad(d),dow=new Date(date+'T12:00:00').getDay();if(dow!==0&&dow!==6&&!seen.has(date))pending.push(date.split('-').reverse().join('/'));}$('reminderMessage').textContent=pending.length?`${pending.length} dia(s) útil(eis) sem lançamento: ${pending.slice(0,6).join(', ')}${pending.length>6?'…':''}. Registre também folgas e ausências.`:'Nenhum dia útil pendente até hoje.';}
+function checkInAppReminders(forceCheck=false){
+ const enabled=localStorage.getItem(dataKey()+'__reminder_enabled')==='1';
+ $('reminderEnabled').checked=enabled;
+ if(!enabled&&!forceCheck){$('reminderMessage').textContent='Lembretes desativados. Ative-os ou toque em Verificar pendências para fazer uma conferência pontual.';return;}
+ const k=$('month').value||'';
+ if(!/^\\d{4}-\\d{2}$/.test(k)){$('reminderMessage').textContent='Selecione um mês válido para verificar as pendências.';return;}
+ const now=new Date(),[yy,mm]=k.split('-').map(Number),isCurrent=yy===now.getFullYear()&&mm===now.getMonth()+1;
+ const isFuture=new Date(yy,mm-1,1)>new Date(now.getFullYear(),now.getMonth(),1);
+ const upto=isFuture?0:(isCurrent?now.getDate():new Date(yy,mm,0).getDate());
+ const seen=new Set(entries.map(e=>e.date)),pending=[];
+ for(let d=1;d<=upto;d++){
+  const date=k+'-'+pad(d),dow=new Date(date+'T12:00:00').getDay();
+  if(dow!==0&&dow!==6&&!seen.has(date))pending.push(date.split('-').reverse().join('/'));
+ }
+ $('reminderMessage').textContent=pending.length
+  ?`${pending.length} dia(s) útil(eis) sem lançamento: ${pending.slice(0,8).join(', ')}${pending.length>8?'…':''}. Confira se foram trabalho, folga ou ausência.`
+  :(upto===0?'O mês selecionado ainda não chegou.':'Nenhum dia útil pendente no período verificado.');
+}
 function render(){
  let list=monthEntries(), worked=0,night=0,extra=0,ev=0,nv=0;
  const offDays=list.filter(e=>e.dayType==='off').length;
@@ -2169,7 +2260,14 @@ function renderHistory(){
   [...groups.get(year).keys()].sort((a,b)=>b.localeCompare(a)).forEach(month=>{
    const list=groups.get(year).get(month),m=historyMonthSummary(list),row=document.createElement('div');row.className='history-month';
    const label=document.createElement('div');const monthName=new Date(Number(year),Number(month)-1,1).toLocaleDateString('pt-BR',{month:'long'});label.innerHTML=`<strong>${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</strong><small>${list.length} marcação(ões) · ${fmtHours(m.worked)} trabalhadas · ${fmtHours(m.extra)} adicionais · ${money(m.value)}</small>`;
-   const btn=document.createElement('button');btn.type='button';btn.textContent='Abrir mês';btn.addEventListener('click',()=>{$('month').value=`${year}-${month}`;$('reportMonth').value=$('month').value;render();$('summaryCard').scrollIntoView({behavior:'smooth',block:'start'});});
+   const btn=document.createElement('button');btn.type='button';btn.textContent='Abrir mês';btn.addEventListener('click',()=>{
+    const targetMonth=`${year}-${String(month).padStart(2,'0')}`;
+    $('month').value=targetMonth;
+    if($('reportMonth'))$('reportMonth').value=targetMonth;
+    render();
+    if(typeof activateSectionTab==='function')activateSectionTab('summaryCard',false);
+    $('summaryCard').scrollIntoView({behavior:'smooth',block:'start'});
+   });
    row.append(label,btn);details.appendChild(row);
   });host.appendChild(details);
  });
@@ -2375,8 +2473,13 @@ function renderAnnualPerformance(){
  $('annualEntryCount').textContent=`${chosen.length} lançamento(s)`;
  const max=Math.max(1,...months.map(m=>m.extra));
  $('annualChart').innerHTML=months.map(m=>{
-  const h=m.extra?Math.max(4,Math.round(m.extra/max*88)):0;
-  return `<div class="annual-month" title="${m.label}: ${fmtHours(Math.round(m.extra))} adicionais"><div class="annual-bar-track"><div class="annual-bar" style="height:${h}px"></div></div><b>${m.extra?fmtHours(Math.round(m.extra)):'—'}</b><small>${m.label.replace('.','')}</small></div>`;
+  const h=m.extra?Math.max(5,Math.round(m.extra/max*100)):0;
+  const monthLabel=m.label.replace('.','');
+  return `<div class="annual-month" title="${monthLabel}: ${fmtHours(Math.round(m.extra))} adicionais">
+   <div class="annual-value">${m.extra?fmtHours(Math.round(m.extra)):'—'}</div>
+   <div class="annual-bar-track"><div class="annual-bar" style="height:${h}%"></div></div>
+   <small>${monthLabel}</small>
+  </div>`;
  }).join('');
  $('annualRows').innerHTML=months.some(m=>m.count)?months.map(m=>`<tr><td>${m.label}</td><td>${fmtHours(Math.round(m.worked))}</td><td>${fmtHours(Math.round(m.extra))}</td><td>${money(m.value)}</td><td>${m.count}</td></tr>`).join(''):`<tr><td colspan="5" class="empty">Nenhum registro neste ano.</td></tr>`;
 }
@@ -2404,7 +2507,7 @@ restoreSettings();$('extraRate').value='0';$('nightRate').value='0';
 load();
 setSyncStatus(authUser?'pending':'local',authUser?'Conta conectada. Verificando sincronização…':'Salvo somente neste aparelho. Entre na conta para sincronizar.');
 $('reminderEnabled').addEventListener('change',e=>{localStorage.setItem(dataKey()+'__reminder_enabled',e.target.checked?'1':'0');checkInAppReminders();});
-$('checkRemindersBtn').addEventListener('click',checkInAppReminders);
+$('checkRemindersBtn').addEventListener('click',()=>checkInAppReminders(true));
 $('savePaymentBtn').addEventListener('click',()=>{const k=$('month').value||'',v=$('paymentReceived').value;if(!k||v===''||!Number.isFinite(Number(v))||Number(v)<0){$('paymentMessage').textContent='Informe um valor válido e selecione o mês.';return;}localStorage.setItem(paymentStorageKey(k),String(Number(v)));updatePaymentComparison();$('paymentMessage').textContent='Conferência salva neste aparelho.';});
 $('clearPaymentBtn').addEventListener('click',()=>{const k=$('month').value||'';if(k)localStorage.removeItem(paymentStorageKey(k));$('paymentReceived').value='';updatePaymentComparison();});
 $('month').addEventListener('change',()=>{if($('reportMonth'))$('reportMonth').value=$('month').value;updatePaymentComparison();checkInAppReminders();});
