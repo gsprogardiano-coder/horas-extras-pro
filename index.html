@@ -1046,7 +1046,7 @@ input,select,textarea{
    <div class="field"><label for="otherDiscounts">Outros descontos (R$)</label><input id="otherDiscounts" type="number" min="0" step=".01" value="0" placeholder="VT, plano, faltas etc."></div>
   </div>
   <div class="stats" style="margin-top:14px">
-   <div class="stat"><small>SALÁRIO-BASE (BRUTO)</small><b id="grossPay">R$ 0,00</b></div>
+   <div class="stat"><small>SALÁRIO-BASE PARA CÁLCULO</small><b id="grossPay">R$ 0,00</b></div>
    <div class="stat"><small>INSS ESTIMADO</small><b id="inssPay">R$ 0,00</b></div>
    <div class="stat"><small>IRRF ESTIMADO</small><b id="irrfPay">R$ 0,00</b></div>
    <div class="stat"><small>OUTROS DESCONTOS</small><b id="otherPay">R$ 0,00</b></div>
@@ -1055,7 +1055,7 @@ input,select,textarea{
    <div class="stat"><small>TOTAL DE DESCONTOS</small><b id="deductionsPay">R$ 0,00</b></div>
    <div class="stat"><small>SALÁRIO LÍQUIDO ESTIMADO</small><b id="netPay">R$ 0,00</b></div>
    <div class="stat"><small>VALOR TOTAL DAS HORAS EXTRAS</small><b id="extraPay">R$ 0,00</b></div>
-   <div class="stat"><small>TOTAL BRUTO (SALÁRIO + HORAS EXTRAS)</small><b id="combinedPay">R$ 0,00</b></div>
+   <div class="stat"><small>TOTAL ESTIMADO (SALÁRIO LÍQUIDO + HORAS EXTRAS)</small><b id="combinedPay">R$ 0,00</b></div>
   </div>
   <p class="note" id="taxNote">Cálculo estimado com tabelas 2026. Não inclui descontos não informados, benefícios, pensão, sindicato, adiantamentos ou regras específicas da folha.</p>
  </section>
@@ -1813,8 +1813,8 @@ function renderSalary(list,ev,nv,dsr){
  const selectedMonth=$('month').value||'';
  const monthExtra=selectedMonth?financeMonthMetrics(selectedMonth).extraValue:0;
  $('extraPay').textContent=money(monthExtra);
- $('combinedPay').textContent=money(gross+monthExtra);
- $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Faltas não justificadas: ${abs.count} dia(s), em ${abs.weeks} semana(s) com perda estimada de DSR. O valor total das horas extras do mês selecionado é exibido separadamente. O total bruto apresentado no painel soma salário-base + horas extras; as horas extras não entram no cálculo de INSS/IRRF desta simulação. O DSR das horas adicionais permanece separado no painel financeiro. Confirme a aplicação com o RH/convenção coletiva.`;
+ $('combinedPay').textContent=money(net+monthExtra);
+ $('taxNote').textContent=`IRRF calculado por ${irrf.method}; base tributável estimada ${money(irrf.base)}. Faltas não justificadas: ${abs.count} dia(s), em ${abs.weeks} semana(s) com perda estimada de DSR. O valor total das horas extras do mês selecionado é exibido separadamente. O total estimado apresentado soma o salário líquido após os descontos simulados + o valor das horas extras do mês selecionado. As horas extras são exibidas separadamente e não entram no cálculo de INSS/IRRF desta simulação. O DSR das horas adicionais permanece separado no painel financeiro. Confirme a aplicação com o RH/convenção coletiva.`;
 }
 function paymentStorageKey(k){return dataKey()+'__payment_received__'+k;}
 function updatePaymentComparison(){const k=$('month').value||'',saved=k?localStorage.getItem(paymentStorageKey(k)):null;if(document.activeElement!==$('paymentReceived'))$('paymentReceived').value=saved??'';const expected=k?financeMonthMetrics(k).total:0,raw=$('paymentReceived').value;$('paymentExpected').textContent=money(expected||0);$('paymentDifference').textContent=raw===''?'—':money(Number(raw)-expected);}
